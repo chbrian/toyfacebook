@@ -20,6 +20,6 @@ libraryDependencies ++= {
   )
 }
 
-mainClass in Global := Some("fb.Main")
+mainClass in Global := Some("fb.Server")
 
 Revolver.settings
