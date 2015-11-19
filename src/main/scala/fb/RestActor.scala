@@ -7,9 +7,9 @@ import spray.routing.{HttpService, RequestContext, Route}
 import scala.concurrent.duration._
 
 /**
- * Akka actor for handling REST request and routing.
- * Created by alan on 11/17/2015.
- */
+  * Akka actor for handling REST request and routing.
+  * Created by alan on 11/17/2015.
+  */
 class RestActor extends Actor with RestApi {
   // the HttpService trait defines only one abstract member, which
   // connects the services environment to the enclosing actor or test
@@ -18,7 +18,9 @@ class RestActor extends Actor with RestApi {
   def receive = runRoute(routes)
 }
 
-trait RestApi extends HttpService with ActorLogging { actor: Actor =>
+trait RestApi extends HttpService with ActorLogging {
+  actor: Actor =>
+
   import Structures._
 
   implicit val timeout = Timeout(10.seconds)
@@ -39,6 +41,13 @@ trait RestApi extends HttpService with ActorLogging { actor: Actor =>
         }
       } ~
       path(Segment) { id =>
+        get { requestContext =>
+          val responder = createResponder(requestContext)
+          USERS.getUser(id) match {
+            case Some(username: String) => responder ! username
+            case None => responder ! UserOpFailed
+          }
+        } ~
         delete { requestContext =>
           val responder = createResponder(requestContext)
           USERS.deleteUser(id) match {
@@ -55,6 +64,17 @@ trait RestApi extends HttpService with ActorLogging { actor: Actor =>
           USERS.addFriend(id, friendId) match {
             case true => responder ! FriendAdded
             case _ => responder ! UserOpFailed
+          }
+        }
+      }
+    } ~
+    pathPrefix("getfriends") {
+      path(Segment) { id =>
+        get { requestContext =>
+          val responder = createResponder(requestContext)
+          USERS.getFriends(id) match {
+            case Some(friendsSeq: Seq[String]) => responder ! friendsSeq
+            case None => responder ! UserOpFailed
           }
         }
       }

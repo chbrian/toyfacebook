@@ -3,10 +3,11 @@ package fb
 import scala.collection.mutable.ArrayBuffer
 
 /**
- * Handle the set of users.
- * Created by alan on 11/17/2015.
- */
+  * Handle the set of users.
+  * Created by alan on 11/17/2015.
+  */
 class UserMap {
+
   import Structures._
 
   private val users = scala.collection.mutable.Map[String, UserInfo]()
@@ -16,6 +17,12 @@ class UserMap {
       return false
     users += (user.id -> new UserInfo(user.id, user.name, user.password))
     true
+  }
+
+  def getUser(id: String): Option[String] = {
+    if (!users.contains(id))
+      return None
+    Some(users(id).name)
   }
 
   def deleteUser(id: String): Boolean = {
@@ -32,9 +39,18 @@ class UserMap {
     users(id).friends.append(friendId)
     true
   }
+
+  def getFriends(id: String): Option[Seq[String]] = {
+    if (!users.contains(id))
+      return None
+    Some(users(id).friends.toSeq)
+  }
 }
 
-class UserInfo(id: String, name: String, password: String) {
+class UserInfo(uid: String, uname: String, upassword: String) {
+  val id = uid
+  val name = uname
+  val password = upassword
   val friends = new ArrayBuffer[String]()
   val posts = new ArrayBuffer[Int]()
 }

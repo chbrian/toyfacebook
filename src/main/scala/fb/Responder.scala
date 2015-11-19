@@ -5,10 +5,11 @@ import spray.http.StatusCodes
 import spray.routing.RequestContext
 
 /**
- * Akka Actor for sending response to a client.
- * Created by alan on 11/17/2015.
- */
+  * Akka Actor for sending response to a client.
+  * Created by alan on 11/17/2015.
+  */
 class Responder(requestContext: RequestContext) extends Actor with ActorLogging {
+
   import Structures._
 
   def receive = {
