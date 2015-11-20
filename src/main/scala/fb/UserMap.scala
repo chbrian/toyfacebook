@@ -1,7 +1,5 @@
 package fb
 
-import scala.collection.mutable.ArrayBuffer
-
 /**
   * Handle the set of users.
   * Created by alan on 11/17/2015.
@@ -25,6 +23,12 @@ class UserMap {
     Some(users(id).name)
   }
 
+  def getUserInfo(id: String): Option[UserInfo] = {
+    if (!users.contains(id))
+      return None
+    Some(users(id).getInfo)
+  }
+
   def deleteUser(id: String): Boolean = {
     if (!users.contains(id))
       return false
@@ -36,21 +40,8 @@ class UserMap {
   def addFriend(id: String, friendId: String): Boolean = {
     if (!users.contains(id) || !users.contains(friendId))
       return false
-    users(id).friends.append(friendId)
+    if (!users(id).friends.contains(friendId))
+      users(id).friends.append(friendId)
     true
   }
-
-  def getFriends(id: String): Option[Seq[String]] = {
-    if (!users.contains(id))
-      return None
-    Some(users(id).friends.toSeq)
-  }
-}
-
-class UserInfo(uid: String, uname: String, upassword: String) {
-  val id = uid
-  val name = uname
-  val password = upassword
-  val friends = new ArrayBuffer[String]()
-  val posts = new ArrayBuffer[Int]()
 }

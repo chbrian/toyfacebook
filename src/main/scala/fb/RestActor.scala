@@ -68,12 +68,12 @@ trait RestApi extends HttpService with ActorLogging {
         }
       }
     } ~
-    pathPrefix("getfriends") {
+    pathPrefix("info") {
       path(Segment) { id =>
         get { requestContext =>
           val responder = createResponder(requestContext)
-          USERS.getFriends(id) match {
-            case Some(friendsSeq: Seq[String]) => responder ! friendsSeq
+          USERS.getUserInfo(id) match {
+            case Some(info: UserInfo) => responder ! info
             case None => responder ! UserOpFailed
           }
         }

@@ -2,6 +2,7 @@ package fb
 
 import akka.actor.{PoisonPill, ActorLogging, Actor}
 import spray.http.StatusCodes
+import spray.httpx.SprayJsonSupport._
 import spray.routing.RequestContext
 
 /**
@@ -23,6 +24,14 @@ class Responder(requestContext: RequestContext) extends Actor with ActorLogging 
 
     case UserOpFailed =>
       requestContext.complete(StatusCodes.NotFound)
+      killYourself
+
+    case string: String =>
+      requestContext.complete(StatusCodes.OK, string)
+      killYourself
+
+    case info: UserInfo =>
+      requestContext.complete(StatusCodes.OK, info)
       killYourself
 
     case FriendAdded =>
