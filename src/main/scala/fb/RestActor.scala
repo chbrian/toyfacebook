@@ -27,6 +27,8 @@ trait RestApi extends HttpService with ActorLogging {
 
   val USERS = new UserMap()
 
+  val POSTS = new Posts()
+
   def routes: Route =
     pathPrefix("user") {
       pathEnd {
@@ -75,6 +77,40 @@ trait RestApi extends HttpService with ActorLogging {
           USERS.getUserInfo(id) match {
             case Some(info: UserInfo) => responder ! info
             case None => responder ! UserOpFailed
+          }
+        }
+      }
+    } ~
+    pathPrefix("post") {
+      pathEnd {
+        post {
+          entity(as[Post]) { newPost => requestContext =>
+            val responder = createResponder(requestContext)
+            USERS.getUser(newPost.ownerId) match {
+              case Some(username: String) =>
+                val postId = POSTS.createPost(newPost)
+                USERS.addPost(newPost.ownerId, postId)
+                responder ! postId.toString
+              case None => responder ! UserOpFailed
+            }
+          }
+        }
+      } ~
+      path(Segment) { postId =>
+        get { requestContext =>
+          val responder = createResponder(requestContext)
+          POSTS.getPost(postId.toInt) match {
+            case Some(post: Post) => responder ! post
+            case None => responder ! PostOpFailed
+          }
+        } ~
+        delete { requestContext =>
+          val responder = createResponder(requestContext)
+          POSTS.deletePost(postId.toInt) match {
+            case Some(post: Post) =>
+              USERS.removePost(post.ownerId, postId.toInt)
+              responder ! PostDeleted
+            case None => responder ! PostOpFailed
           }
         }
       }

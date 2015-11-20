@@ -44,4 +44,18 @@ class UserMap {
       users(id).friends.append(friendId)
     true
   }
+
+  def addPost(id: String, postId: Int): Boolean = {
+    if (!users.contains(id))
+      return false
+    users(id).posts.append(postId)
+    true
+  }
+
+  def removePost(id: String, postId: Int): Boolean = {
+    if (!users.contains(id))
+      return false
+    users(id).posts -= postId
+    true
+  }
 }

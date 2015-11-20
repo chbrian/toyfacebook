@@ -26,6 +26,7 @@ class Responder(requestContext: RequestContext) extends Actor with ActorLogging 
       requestContext.complete(StatusCodes.NotFound)
       killYourself
 
+    // Used for return id, name or any String value.
     case string: String =>
       requestContext.complete(StatusCodes.OK, string)
       killYourself
@@ -39,6 +40,18 @@ class Responder(requestContext: RequestContext) extends Actor with ActorLogging 
       killYourself
 
     case FriendOpFailed =>
+      requestContext.complete(StatusCodes.NotFound)
+      killYourself
+
+    case post: Post =>
+      requestContext.complete(StatusCodes.OK, post)
+      killYourself
+
+    case PostDeleted =>
+      requestContext.complete(StatusCodes.OK)
+      killYourself
+
+    case PostOpFailed =>
       requestContext.complete(StatusCodes.NotFound)
       killYourself
   }

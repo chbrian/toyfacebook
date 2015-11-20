@@ -9,7 +9,7 @@ import scala.collection.mutable.ArrayBuffer
 object Structures {
 
   // FB REST post requests
-  case class Post(id: Int, content: String, owner_id: String)
+  case class Post(ownerId: String, content: String)
 
   case object PostCreated
 
@@ -27,8 +27,6 @@ object Structures {
   case object UserOpFailed
 
   // FB REST user friend request
-  case class Friend(A: String, B: String)
-
   case object FriendAdded
 
   case object FriendOpFailed
@@ -39,12 +37,14 @@ object Structures {
     val name = uname
     val password = upassword
     val friends = new ArrayBuffer[String]()
-    val page = new ArrayBuffer[Int]()
+    val posts = new ArrayBuffer[Int]()
+    val albums = new ArrayBuffer[Int]()
 
     def getInfo: UserInfo = {
       val info = new UserInfo(id, name, null)
       info.friends.appendAll(friends)
-      info.page.appendAll(page)
+      info.posts.appendAll(posts)
+      info.albums.appendAll(albums)
       info
     }
   }
@@ -55,17 +55,12 @@ object Structures {
 
   // Json for Post
   object Post extends DefaultJsonProtocol {
-    implicit val format = jsonFormat3(Post.apply)
+    implicit val format = jsonFormat2(Post.apply)
   }
 
   // Json for User
   object User extends DefaultJsonProtocol {
     implicit val format = jsonFormat3(User.apply)
-  }
-
-  // Json for Friend
-  object Friend extends DefaultJsonProtocol {
-    implicit val format = jsonFormat2(Friend.apply)
   }
 
   // Json for UserInfo
@@ -76,13 +71,14 @@ object Structures {
           "id" -> JsString(ur.id),
           "name" -> JsString(ur.name),
           "friends" -> JsArray(ur.friends.map(_.toJson).toVector),
-          "page" -> JsArray(ur.page.map(_.toJson).toVector)
+          "posts" -> JsArray(ur.posts.map(_.toJson).toVector),
+          "albums" -> JsArray(ur.albums.map(_.toJson).toVector)
         )
       )
 
       def read(value: JsValue) = {
-        value.asJsObject.getFields("id", "name", "friends", "page") match {
-          case Seq(JsString(id), JsString(name), JsArray(friends), JsArray(page)) =>
+        value.asJsObject.getFields("id", "name", "friends", "posts", "albums") match {
+          case Seq(JsString(id), JsString(name), JsArray(friends), JsArray(posts), JsArray(albums)) =>
             new UserInfo(id, name, null)
           case _ => throw new DeserializationException("UserInfo expected")
         }
