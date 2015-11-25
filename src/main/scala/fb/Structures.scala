@@ -1,5 +1,6 @@
 package fb
 
+import java.awt.image.BufferedImage
 import scala.collection.mutable.ArrayBuffer
 
 /**
@@ -16,6 +17,24 @@ object Structures {
   case object PostDeleted
 
   case object PostOpFailed
+
+  // FB REST picture requests
+  case class Picture(albumId: Int, name: String, content: BufferedImage)
+
+  case object PictureCreated
+
+  case object PictureDeleted
+
+  case object PictureOpFailed
+
+  // FB REST album requests
+  case class Album(ownerId: String, name: String)
+
+  case object AlbumCreated
+
+  case object AlbumDeleted
+
+  case object AlbumOpFailed
 
   // FB REST user requests
   case class User(id: String, name: String, password: String)

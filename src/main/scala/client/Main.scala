@@ -38,12 +38,6 @@ object Main extends App with Requests {
     case Failure(error) => log.warning("Get user {} request error: {}", id, error.getMessage)
   }
 
-  val result2 = getUserInfo(host, id)
-  result2 onComplete {
-    case Success(response) => log.info("Get user info {}, received response: {}", id, response.name)
-    case Failure(error) => log.warning("Get user info {} request error: {}", id, error.getMessage)
-  }
-
   Thread.sleep(1000)  // TODO: use actor or future composition instead of sleep (blocking!)
   val result3 = deleteUser(host, id)
   result3 onComplete {

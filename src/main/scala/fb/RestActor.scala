@@ -29,7 +29,12 @@ trait RestApi extends HttpService with ActorLogging {
 
   val POSTS = new Posts()
 
+  val PICTURES = new Pictures()
+
+  val ALBUMS = new Albums()
+
   def routes: Route =
+//  User Actions
     pathPrefix("user") {
       pathEnd {
         post {
@@ -82,6 +87,7 @@ trait RestApi extends HttpService with ActorLogging {
         }
       }
     } ~
+  // Post Actions
     pathPrefix("post") {
       pathEnd {
         post {
@@ -112,6 +118,17 @@ trait RestApi extends HttpService with ActorLogging {
               USERS.removePost(post.ownerId, postId.toInt)
               responder ! PostDeleted
             case None => responder ! PostOpFailed
+          }
+        }
+      }
+    }
+  // Picture Actions
+    pathPrefix("picture") {
+      pathEnd {
+        post {
+          entity(as[Picture]) { newPicture => mapRequestContext =>
+            val responder = createResponder(requestContext)
+
           }
         }
       }

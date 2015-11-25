@@ -28,6 +28,7 @@ class Posts {
       return None
     val post = posts(postId)
     posts -= postId
+    postCount -= 1
     Some(post)
   }
 }

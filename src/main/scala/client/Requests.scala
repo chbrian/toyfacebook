@@ -4,7 +4,7 @@ import akka.actor.ActorSystem
 import akka.io.IO
 import akka.pattern.ask
 import akka.util.Timeout
-import fb.Structures._
+import facebook.Structures._
 import spray.can.Http
 import spray.client.pipelining._
 import spray.httpx.SprayJsonSupport._
@@ -31,21 +31,12 @@ trait Requests {
     response
   }
 
-  def getUser(host: String, id: String)(implicit system: ActorSystem): Future[String] = {
+  def getUser(host: String, id: String)(implicit system: ActorSystem): Future[User] = {
     import system.dispatcher
 
-    val pipeline: HttpRequest => Future[String] = sendReceive ~> unmarshal[String]
+    val pipeline: HttpRequest => Future[User] = sendReceive ~> unmarshal[User]
 
-    val response: Future[String] = pipeline(Get(host + "user/" + id))
-    response
-  }
-
-  def getUserInfo(host: String, id: String)(implicit system: ActorSystem): Future[UserInfo] = {
-    import system.dispatcher
-
-    val pipeline: HttpRequest => Future[UserInfo] = sendReceive ~> unmarshal[UserInfo]
-
-    val response: Future[UserInfo] = pipeline(Get(host + "info/" + id))
+    val response: Future[User] = pipeline(Get(host + "info/" + id))
     response
   }
 
@@ -57,4 +48,6 @@ trait Requests {
       response.status.toString
     }
   }
+
+
 }
