@@ -34,6 +34,7 @@ trait RestApi extends HttpService with ActorLogging {
       pathEnd {
         post {
           entity(as[User]) { user => requestContext =>
+            log.info("Get user creation request: {}", user)
             val responder = createResponder(requestContext)
             USERS.createUser(user) match {
               case true => responder ! UserCreated
