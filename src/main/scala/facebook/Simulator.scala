@@ -23,8 +23,8 @@ object Boot extends App with Configuration {
   IO(Http) ! Http.Bind(restService, serviceHost, servicePort)
   
   //Use POST with json to create user
-  curl -H "Content-Type: application/json" -X POST -d '{"id":"yi", "name":"yi","password":"123"}' http://localhost:8080/user
- 
+  curl -X POST http://localhost:8080/user -H "Content-Type: application/json" -d '{"id":"yi", "name":"yi","password":"123"}'
+  
   //Use DELETE to delete user
   curl -X DELETE http://localhost:8080/user/yi
  
