@@ -58,7 +58,7 @@ class UserActor extends Actor {
     true
   }
 
-  def deletePost(id: String, postId: Int): Boolean = {
+  def removePost(id: String, postId: Int): Boolean = {
     if (!users.contains(id))
       return false
     users(id).posts -= postId
@@ -100,7 +100,7 @@ class UserActor extends Actor {
       sender ! addPost(id, postId)
 
     case RemovePost(id: String, postId: Int) =>
-      sender ! deletePost(id, postId)
+      sender ! removePost(id, postId)
 
     case AddAlbum(id: String, albumId: Int) =>
       sender ! addAlbum(id, albumId)

@@ -7,7 +7,7 @@ import scala.concurrent.Await
   * Handle all the Posts.
   * Created by alan on 11/20/15.
   */
-class PostActor extends BasicActor{
+class PostActor extends BasicActor {
 
   import Structures._
 
@@ -39,10 +39,11 @@ class PostActor extends BasicActor{
     posts -= postId
     val future = userActor ? RemovePost(post.ownerId, postId)
     Await.result(future, timeout.duration).asInstanceOf[Boolean] match {
+      case true => return true
       case false =>
         log.warning("Post {} can't be removed from user side.", postId)
+        true
     }
-    true
   }
 
   def receive = {

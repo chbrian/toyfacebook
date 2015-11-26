@@ -1,7 +1,5 @@
 package facebook
 
-import java.awt.image.BufferedImage
-
 import spray.httpx.SprayJsonSupport
 import spray.json._
 import scala.collection.mutable.ArrayBuffer
@@ -68,7 +66,7 @@ object Structures {
   case object AlbumOpFailed
 
   // FB REST picture requests
-  case class Picture(albumId: Int, name: String, content: BufferedImage)
+  case class Picture(albumId: Int, name: String, content: ArrayBuffer[Byte] = new ArrayBuffer[Byte]())
 
   case class CreatePicture(picture: Picture)
 
@@ -83,7 +81,7 @@ object Structures {
   case object PictureOpFailed
 
 
-  // Json for UserInfo
+  // Json for User
   object User extends DefaultJsonProtocol {
 
     implicit object UserJsonFormat extends RootJsonFormat[User] {
@@ -116,7 +114,7 @@ object Structures {
     implicit val format = jsonFormat2(Post.apply)
   }
 
-  // Json fro Album
+  // Json for Album
   object Album extends DefaultJsonProtocol {
 
     implicit object UserJsonFormat extends RootJsonFormat[Album] {
@@ -134,6 +132,29 @@ object Structures {
             new Album(ownerId, name)
           case Seq(JsString(ownerId), JsString(name), JsArray(pictures)) =>
             new Album(ownerId, name, pictures.map(x => x.toString.toInt).to[ArrayBuffer])
+          case _ => throw new DeserializationException("User expected")
+        }
+      }
+    }
+
+  }
+
+  // Json for Picture
+  object Picture extends DefaultJsonProtocol {
+
+    implicit object UserJsonFormat extends RootJsonFormat[Picture] {
+      def write(picture: Picture) = JsObject(
+        Map(
+          "albumId" -> JsNumber(picture.albumId),
+          "name" -> JsString(picture.name),
+          "content" -> JsArray(picture.content.map(_.toJson).toVector)
+        )
+      )
+
+      def read(value: JsValue) = {
+        value.asJsObject.getFields("albumId", "name", "content") match {
+          case Seq(JsString(albumId), JsString(name), JsArray(content)) =>
+            new Picture(albumId.toInt, name, content.map(x => x.toString.toByte).to[ArrayBuffer])
           case _ => throw new DeserializationException("User expected")
         }
       }

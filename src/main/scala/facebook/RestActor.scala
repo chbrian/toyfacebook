@@ -103,7 +103,7 @@ trait RestApi extends HttpService with ActorLogging {
               val responder = createResponder(requestContext)
               val future = postActor ? CreatePost(newPost)
               Await.result(future, timeout.duration).asInstanceOf[Boolean] match {
-                case true => responder ! newPost
+                case true => responder ! "Post created."
                 case false => responder ! PostOpFailed
               }
             }
