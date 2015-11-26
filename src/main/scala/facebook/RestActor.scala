@@ -7,8 +7,6 @@ package facebook
 import akka.actor._
 import akka.pattern.ask
 import akka.util.Timeout
-import spray.http.MediaTypes
-import spray.httpx.Json4sSupport
 import spray.httpx.SprayJsonSupport._
 import spray.routing.{HttpService, RequestContext, Route}
 import scala.concurrent.Await
@@ -30,12 +28,8 @@ trait RestApi extends HttpService with ActorLogging {
 
   implicit val timeout = Timeout(2.seconds)
 
-  val userActor = context.actorSelection("../userActor")
-
-
-  def getJson(route: Route) = get {
-    respondWithMediaType(MediaTypes.`application/json`) { route }
-  }
+  val userActor = context.actorSelection("/user/userActor")
+  val postActor = context.actorSelection("/user/postActor")
 
   def routes: Route =
   //  User Actions
@@ -47,9 +41,9 @@ trait RestApi extends HttpService with ActorLogging {
             val responder = createResponder(requestContext)
             val future = userActor ? CreateUser(user)
             Await.result(future, timeout.duration).asInstanceOf[Boolean] match {
-              case true => responder ! UserCreated
-              case _ => responder ! UserOpFailed
-          }
+              case true => responder ! user
+              case false => responder ! UserOpFailed
+            }
           }
         }
       } ~
@@ -62,18 +56,54 @@ trait RestApi extends HttpService with ActorLogging {
               case Some(user: User) => responder ! user
               case None => responder ! UserOpFailed
             }
+          } ~
+            delete { requestContext =>
+              log.info("Delete user request: {}", id)
+              val responder = createResponder(requestContext)
+              val future = userActor ? DeleteUser(id)
+              Await.result(future, timeout.duration).asInstanceOf[Boolean] match {
+                case true => responder ! UserDeleted
+                case _ => responder ! UserOpFailed
+              }
+            }
+        }
+    }~
+    // Post Actions
+    pathPrefix("post") {
+      pathEnd {
+        post {
+          entity(as[Post]) { newPost => requestContext =>
+            log.info("Get post creation request: {}", newPost)
+            val responder = createResponder(requestContext)
+            val future = postActor ? CreatePost(newPost)
+            Await.result(future, timeout.duration).asInstanceOf[Boolean] match {
+              case true => responder ! newPost
+              case false => responder ! PostOpFailed
+            }
           }
         }
-      //          } ~
-      //            delete { requestContext =>
-      //              val responder = createResponder(requestContext)
-      //              USERS.deleteUser(id) match {
-      //                case true => responder ! UserDeleted
-      //                case _ => responder ! UserOpFailed
-      //              }
-      //            }
-      //        }
-      //    } ~
+      } ~
+        path(Segment) { postId =>
+          get { requestContext =>
+            val responder = createResponder(requestContext)
+            val future = postActor ? GetPost(postId.toInt)
+            Await.result(future, timeout.duration).asInstanceOf[Option[Post]] match {
+              case Some(post:Post) => responder ! post
+              case None => responder ! PostOpFailed
+            }
+          } ~
+            delete { requestContext =>
+              val responder = createResponder(requestContext)
+              val future = postActor ? DeletePost(postId.toInt)
+              Await.result(future, timeout.duration).asInstanceOf[Option[Post]] match {
+                case Some(post:Post) => responder ! post
+                case None => responder ! PostOpFailed
+              }
+            }
+        }
+    }
+
+//          } ~
       //      pathPrefix("addfriend") {
       //        path(Segment / Segment) { (id, friendId) =>
       //          put { requestContext =>
@@ -96,41 +126,7 @@ trait RestApi extends HttpService with ActorLogging {
       //          }
       //        }
       //      } ~
-      //      // Post Actions
-      //      pathPrefix("post") {
-      //        pathEnd {
-      //          post {
-      //            entity(as[Post]) { newPost => requestContext =>
-      //              val responder = createResponder(requestContext)
-      //              USERS.getUser(newPost.ownerId) match {
-      //                case Some(username: String) =>
-      //                  val postId = POSTS.createPost(newPost)
-      //                  USERS.addPost(newPost.ownerId, postId)
-      //                  responder ! postId.toString
-      //                case None => responder ! UserOpFailed
-      //              }
-      //            }
-      //          }
-      //        } ~
-      //          path(Segment) { postId =>
-      //            get { requestContext =>
-      //              val responder = createResponder(requestContext)
-      //              POSTS.getPost(postId.toInt) match {
-      //                case Some(post: Post) => responder ! post
-      //                case None => responder ! PostOpFailed
-      //              }
-      //            } ~
-      //              delete { requestContext =>
-      //                val responder = createResponder(requestContext)
-      //                POSTS.deletePost(postId.toInt) match {
-      //                  case Some(post: Post) =>
-      //                    USERS.removePost(post.ownerId, postId.toInt)
-      //                    responder ! PostDeleted
-      //                  case None => responder ! PostOpFailed
-      //                }
-      //              }
-      //          }
-      //      }
+
       //  // Picture Actions
       //  pathPrefix("picture") {
       //    pathEnd {
@@ -143,7 +139,6 @@ trait RestApi extends HttpService with ActorLogging {
       //    }
       //  }
 
-    }
 
 
   private def createResponder(requestContext: RequestContext): ActorRef = {

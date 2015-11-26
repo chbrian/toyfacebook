@@ -13,9 +13,6 @@ class Responder(requestContext: RequestContext) extends Actor with ActorLogging 
   import Structures._
 
   def receive = {
-    case UserCreated =>
-      requestContext.complete(StatusCodes.Created)
-      killYourself
 
     case UserDeleted =>
       requestContext.complete(StatusCodes.OK)
@@ -46,9 +43,9 @@ class Responder(requestContext: RequestContext) extends Actor with ActorLogging 
 //      requestContext.complete(StatusCodes.NotFound)
 //      killYourself
 //
-//    case post: Post =>
-//      requestContext.complete(StatusCodes.OK, post)
-//      killYourself
+    case post: Post =>
+      requestContext.complete(StatusCodes.OK, post)
+      killYourself
 //
 //    case PostDeleted =>
 //      requestContext.complete(StatusCodes.OK)

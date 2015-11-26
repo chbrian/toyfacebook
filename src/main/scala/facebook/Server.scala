@@ -19,6 +19,7 @@ object Server extends App {
   // create and start REST api service actor
   val restActor = system.actorOf(Props[RestActor], "rest-api")
   val userActor = system.actorOf(Props[UserActor], "userActor")
+  val postActor = system.actorOf(Props[PostActor], "postActor")
 
   implicit val executionContext = system.dispatcher
   implicit val timeout = Timeout(2.seconds)

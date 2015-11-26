@@ -11,8 +11,35 @@ import scala.collection.mutable.ArrayBuffer
   */
 object Structures {
 
+  // FB REST user requests
+
+  case class User(id: String, name: String, password: String, friends: ArrayBuffer[String]=new ArrayBuffer[String](),
+                  posts: ArrayBuffer[Int]=new ArrayBuffer[Int](), albums: ArrayBuffer[Int]=new ArrayBuffer[Int]())
+
+  case class CreateUser(user: User)
+
+  case class GetUser(id: String)
+
+  case class DeleteUser(id: String)
+
+  case object UserCreated
+
+  case object UserDeleted
+
+  case object UserOpFailed
+
   // FB REST post requests
   case class Post(ownerId: String, content: String)
+
+  case class CreatePost(post: Post)
+
+  case class GetPost(id: Int)
+
+  case class DeletePost(id: Int)
+
+  case class AddPost(id: String, postId: Int) // for user
+
+  case class RemovePost(id: String, postId: Int) // for user
 
   case object PostCreated
 
@@ -38,27 +65,12 @@ object Structures {
 
   case object AlbumOpFailed
 
-  // FB REST user requests
-
-  case class CreateUser(user: User)
-
-  case class GetUser(id: String)
-
-  case class DeleteUser(id: String)
-
-  case object UserCreated
-
-  case object UserDeleted
-
-  case object UserOpFailed
 
   // FB REST user friend request
   case object FriendAdded
 
   case object FriendOpFailed
 
-  case class User(id: String, name: String, password: String, friends: ArrayBuffer[String]=new ArrayBuffer[String](),
-                  posts: ArrayBuffer[Int]=new ArrayBuffer[Int](), albums: ArrayBuffer[Int]=new ArrayBuffer[Int]())
 
     // Json for UserInfo
   object User extends DefaultJsonProtocol {
@@ -85,13 +97,14 @@ object Structures {
       }
     }
   }
+
+  // Json for Post
+  object Post extends DefaultJsonProtocol {
+    implicit val format = jsonFormat2(Post.apply)
+  }
 }
 
-//
-//  // Json for Post
-//  object Post extends DefaultJsonProtocol {
-//    implicit val format = jsonFormat2(Post.apply)
-//  }
+
 
 
 //}

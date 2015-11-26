@@ -1,4 +1,4 @@
-//package fb
+//package facebook
 //
 ///**
 //  * Created by xiaoyong on 11/25/2015.
