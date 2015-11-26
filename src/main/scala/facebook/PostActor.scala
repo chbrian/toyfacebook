@@ -15,10 +15,10 @@ class PostActor extends BasicActor{
   private var postCount = 0
 
   def createPost(post: Post): Boolean = {
-    posts += (postCount -> post)
     val future = userActor ? AddPost(post.ownerId, postCount)
     Await.result(future, timeout.duration).asInstanceOf[Boolean] match {
       case true =>
+        posts += (postCount -> post)
         postCount += 1
         true
       case false =>
@@ -32,9 +32,9 @@ class PostActor extends BasicActor{
     Some(posts(postId))
   }
 
-  def deletePost(postId: Int): Option[Post] = {
+  def deletePost(postId: Int): Boolean = {
     if (!posts.contains(postId))
-      return None
+      return false
     val post = posts(postId)
     posts -= postId
     val future = userActor ? RemovePost(post.ownerId, postId)
@@ -42,7 +42,7 @@ class PostActor extends BasicActor{
       case false =>
         log.warning("Post {} can't be removed from user side.", postId)
     }
-    Some(post)
+    true
   }
 
   def receive = {

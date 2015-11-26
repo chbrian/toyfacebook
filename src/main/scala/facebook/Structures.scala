@@ -5,16 +5,20 @@ import java.awt.image.BufferedImage
 import spray.httpx.SprayJsonSupport
 import spray.json._
 import scala.collection.mutable.ArrayBuffer
+
 /**
   * Defining User structure
   * Created by alan on 11/17/2015.
   */
 object Structures {
 
+  // create/get/delete is for object
+  // add/remove is for user
+
   // FB REST user requests
 
-  case class User(id: String, name: String, password: String, friends: ArrayBuffer[String]=new ArrayBuffer[String](),
-                  posts: ArrayBuffer[Int]=new ArrayBuffer[Int](), albums: ArrayBuffer[Int]=new ArrayBuffer[Int]())
+  case class User(id: String, name: String, password: String, friends: ArrayBuffer[String] = new ArrayBuffer[String](),
+                  posts: ArrayBuffer[Int] = new ArrayBuffer[Int](), albums: ArrayBuffer[Int] = new ArrayBuffer[Int]())
 
   case class CreateUser(user: User)
 
@@ -22,11 +26,12 @@ object Structures {
 
   case class DeleteUser(id: String)
 
-  case object UserCreated
+  case class AddFriend(id: String, friendId: String)
 
-  case object UserDeleted
+  case class RemoveFriend(id: String, friendId: String)
 
   case object UserOpFailed
+
 
   // FB REST post requests
   case class Post(ownerId: String, content: String)
@@ -37,18 +42,39 @@ object Structures {
 
   case class DeletePost(id: Int)
 
-  case class AddPost(id: String, postId: Int) // for user
+  case class AddPost(id: String, postId: Int)
 
-  case class RemovePost(id: String, postId: Int) // for user
-
-  case object PostCreated
-
-  case object PostDeleted
+  case class RemovePost(id: String, postId: Int)
 
   case object PostOpFailed
 
+  // FB REST album requests
+  case class Album(ownerId: String, name: String, pictures: ArrayBuffer[Int] = new ArrayBuffer[Int]())
+
+  case class CreateAlbum(album: Album)
+
+  case class GetAlbum(albumId: Int)
+
+  case class DeleteAlbum(albumId: Int)
+
+  case class AddAlbum(id: String, albumId: Int)
+
+  case class RemoveAlbum(id: String, albumId: Int)
+
+  case class AddPicture(albumId: Int, pictureId: Int)
+
+  case class RemovePicture(albumId: Int, pictureId: Int)
+
+  case object AlbumOpFailed
+
   // FB REST picture requests
   case class Picture(albumId: Int, name: String, content: BufferedImage)
+
+  case class CreatePicture(picture: Picture)
+
+  case class GetPicture(pictureId: Int)
+
+  case class DeletePicture(pictureId: Int)
 
   case object PictureCreated
 
@@ -56,33 +82,19 @@ object Structures {
 
   case object PictureOpFailed
 
-  // FB REST album requests
-  case class Album(ownerId: String, name: String)
 
-  case object AlbumCreated
-
-  case object AlbumDeleted
-
-  case object AlbumOpFailed
-
-
-  // FB REST user friend request
-  case object FriendAdded
-
-  case object FriendOpFailed
-
-
-    // Json for UserInfo
+  // Json for UserInfo
   object User extends DefaultJsonProtocol {
+
     implicit object UserJsonFormat extends RootJsonFormat[User] {
-      def write(ur: User) = JsObject(
+      def write(user: User) = JsObject(
         Map(
-          "id" -> JsString(ur.id),
-          "name" -> JsString(ur.name),
-          "password" -> JsString(ur.password),
-          "friends" -> JsArray(ur.friends.map(_.toJson).toVector),
-          "posts" -> JsArray(ur.posts.map(_.toJson).toVector),
-          "albums" -> JsArray(ur.albums.map(_.toJson).toVector)
+          "id" -> JsString(user.id),
+          "name" -> JsString(user.name),
+          "password" -> JsString(user.password),
+          "friends" -> JsArray(user.friends.map(_.toJson).toVector),
+          "posts" -> JsArray(user.posts.map(_.toJson).toVector),
+          "albums" -> JsArray(user.albums.map(_.toJson).toVector)
         )
       )
 
@@ -96,15 +108,40 @@ object Structures {
         }
       }
     }
+
   }
 
   // Json for Post
   object Post extends DefaultJsonProtocol {
     implicit val format = jsonFormat2(Post.apply)
   }
+
+  // Json fro Album
+  object Album extends DefaultJsonProtocol {
+
+    implicit object UserJsonFormat extends RootJsonFormat[Album] {
+      def write(album: Album) = JsObject(
+        Map(
+          "ownerId" -> JsString(album.ownerId),
+          "name" -> JsString(album.name),
+          "pictures" -> JsArray(album.pictures.map(_.toJson).toVector)
+        )
+      )
+
+      def read(value: JsValue) = {
+        value.asJsObject.getFields("ownerId", "name", "pictures") match {
+          case Seq(JsString(ownerId), JsString(name)) =>
+            new Album(ownerId, name)
+          case Seq(JsString(ownerId), JsString(name), JsArray(pictures)) =>
+            new Album(ownerId, name, pictures.map(x => x.toString.toInt).to[ArrayBuffer])
+          case _ => throw new DeserializationException("User expected")
+        }
+      }
+    }
+
+  }
+
 }
-
-
 
 
 //}

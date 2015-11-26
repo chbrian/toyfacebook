@@ -30,6 +30,8 @@ trait RestApi extends HttpService with ActorLogging {
 
   val userActor = context.actorSelection("/user/userActor")
   val postActor = context.actorSelection("/user/postActor")
+  val albumActor = context.actorSelection("/user/albumActor")
+  val pictureActor = context.actorSelection("/user/pictureActor")
 
   def routes: Route =
   //  User Actions
@@ -41,7 +43,7 @@ trait RestApi extends HttpService with ActorLogging {
             val responder = createResponder(requestContext)
             val future = userActor ? CreateUser(user)
             Await.result(future, timeout.duration).asInstanceOf[Boolean] match {
-              case true => responder ! user
+              case true => responder ! "User created."
               case false => responder ! UserOpFailed
             }
           }
@@ -62,83 +64,172 @@ trait RestApi extends HttpService with ActorLogging {
               val responder = createResponder(requestContext)
               val future = userActor ? DeleteUser(id)
               Await.result(future, timeout.duration).asInstanceOf[Boolean] match {
-                case true => responder ! UserDeleted
+                case true => responder ! "User Deleted."
                 case _ => responder ! UserOpFailed
               }
             }
-        }
-    }~
-    // Post Actions
-    pathPrefix("post") {
-      pathEnd {
-        post {
-          entity(as[Post]) { newPost => requestContext =>
-            log.info("Get post creation request: {}", newPost)
-            val responder = createResponder(requestContext)
-            val future = postActor ? CreatePost(newPost)
-            Await.result(future, timeout.duration).asInstanceOf[Boolean] match {
-              case true => responder ! newPost
-              case false => responder ! PostOpFailed
+        } ~
+        pathPrefix("addFriend") {
+          path(Segment / Segment) { (id, friendId) =>
+            put { requestContext =>
+              val responder = createResponder(requestContext)
+              val future = userActor ? AddFriend(id, friendId)
+              Await.result(future, timeout.duration).asInstanceOf[Boolean] match {
+                case true => responder ! "Friend Added."
+                case _ => responder ! UserOpFailed
+              }
+            }
+          }
+        } ~
+        pathPrefix("removeFriend") {
+          path(Segment / Segment) { (id, friendId) =>
+            delete { requestContext => // delete method may be wrong.
+              val responder = createResponder(requestContext)
+              val future = userActor ? RemoveFriend(id, friendId)
+              Await.result(future, timeout.duration).asInstanceOf[Boolean] match {
+                case true => responder ! "Friend Removed."
+                case _ => responder ! UserOpFailed
+              }
             }
           }
         }
-      } ~
-        path(Segment) { postId =>
-          get { requestContext =>
-            val responder = createResponder(requestContext)
-            val future = postActor ? GetPost(postId.toInt)
-            Await.result(future, timeout.duration).asInstanceOf[Option[Post]] match {
-              case Some(post:Post) => responder ! post
-              case None => responder ! PostOpFailed
-            }
-          } ~
-            delete { requestContext =>
+    } ~
+      // Post Actions
+      pathPrefix("post") {
+        pathEnd {
+          post {
+            entity(as[Post]) { newPost => requestContext =>
+              log.info("Get post creation request: {}", newPost)
               val responder = createResponder(requestContext)
-              val future = postActor ? DeletePost(postId.toInt)
-              Await.result(future, timeout.duration).asInstanceOf[Option[Post]] match {
-                case Some(post:Post) => responder ! post
-                case None => responder ! PostOpFailed
+              val future = postActor ? CreatePost(newPost)
+              Await.result(future, timeout.duration).asInstanceOf[Boolean] match {
+                case true => responder ! newPost
+                case false => responder ! PostOpFailed
               }
             }
-        }
-    }
+          }
+        } ~
+          path(Segment) { postId =>
+            get { requestContext =>
+              val responder = createResponder(requestContext)
+              val future = postActor ? GetPost(postId.toInt)
+              Await.result(future, timeout.duration).asInstanceOf[Option[Post]] match {
+                case Some(post: Post) => responder ! post
+                case None => responder ! PostOpFailed
+              }
+            } ~
+              delete { requestContext =>
+                val responder = createResponder(requestContext)
+                val future = postActor ? DeletePost(postId.toInt)
+                Await.result(future, timeout.duration).asInstanceOf[Boolean] match {
+                  case true => responder ! "Post Deleted."
+                  case false => responder ! PostOpFailed
+                }
+              }
+          }
+      } ~
+      pathPrefix("album") {
+        pathEnd {
+          post {
+            entity(as[Album]) { album => requestContext =>
+              log.info("Get album creation request: {}", album)
+              val responder = createResponder(requestContext)
+              val future = albumActor ? CreateAlbum(album)
+              Await.result(future, timeout.duration).asInstanceOf[Boolean] match {
+                case true => responder ! "Album created."
+                case false => responder ! AlbumOpFailed
+              }
+            }
+          }
+        } ~
+          path(Segment) { albumId =>
+            get { requestContext =>
+              val responder = createResponder(requestContext)
+              val future = albumActor ? GetAlbum(albumId.toInt)
+              Await.result(future, timeout.duration).asInstanceOf[Option[Album]] match {
+                case Some(album: Album) => responder ! album
+                case None => responder ! AlbumOpFailed
+              }
+            } ~
+              delete { requestContext =>
+                val responder = createResponder(requestContext)
+                val future = albumActor ? DeletePost(albumId.toInt)
+                Await.result(future, timeout.duration).asInstanceOf[Boolean] match {
+                  case true => responder ! "Album Deleted."
+                  case false => responder ! PostOpFailed
+                }
+              }
+          }
+      } ~
+      pathPrefix("picture") {
+        pathEnd {
+          post {
+            entity(as[Picture]) { picture => requestContext =>
+              log.info("Get picture creation request: {}", picture)
+              val responder = createResponder(requestContext)
+              val future = pictureActor ? CreatePicture(picture)
+              Await.result(future, timeout.duration).asInstanceOf[Boolean] match {
+                case true => responder ! "Picture created."
+                case false => responder ! PictureOpFailed
+              }
+            }
+          }
+        } ~
+          path(Segment) { pictureId =>
+            get { requestContext =>
+              val responder = createResponder(requestContext)
+              val future = pictureActor ? GetPicture(pictureId.toInt)
+              Await.result(future, timeout.duration).asInstanceOf[Option[Picture]] match {
+                case Some(picture: Picture) => responder ! picture
+                case None => responder ! PictureOpFailed
+              }
+            } ~
+              delete { requestContext =>
+                val responder = createResponder(requestContext)
+                val future = pictureActor ? DeletePicture(pictureId.toInt)
+                Await.result(future, timeout.duration).asInstanceOf[Boolean] match {
+                  case true => responder ! "Picture Deleted."
+                  case false => responder ! PictureOpFailed
+                }
+              }
+          }
+      }
 
-//          } ~
-      //      pathPrefix("addfriend") {
-      //        path(Segment / Segment) { (id, friendId) =>
-      //          put { requestContext =>
-      //            val responder = createResponder(requestContext)
-      //            USERS.addFriend(id, friendId) match {
-      //              case true => responder ! FriendAdded
-      //              case _ => responder ! UserOpFailed
-      //            }
-      //          }
-      //        }
-      //      } ~
-      //      pathPrefix("info") {
-      //        path(Segment) { id =>
-      //          get { requestContext =>
-      //            val responder = createResponder(requestContext)
-      //            USERS.getUserInfo(id) match {
-      //              case Some(info: UserInfo) => responder ! info
-      //              case None => responder ! UserOpFailed
-      //            }
-      //          }
-      //        }
-      //      } ~
+  //          } ~
+  //      pathPrefix("addfriend") {
+  //        path(Segment / Segment) { (id, friendId) =>
+  //          put { requestContext =>
+  //            val responder = createResponder(requestContext)
+  //            USERS.addFriend(id, friendId) match {
+  //              case true => responder ! FriendAdded
+  //              case _ => responder ! UserOpFailed
+  //            }
+  //          }
+  //        }
+  //      } ~
+  //      pathPrefix("info") {
+  //        path(Segment) { id =>
+  //          get { requestContext =>
+  //            val responder = createResponder(requestContext)
+  //            USERS.getUserInfo(id) match {
+  //              case Some(info: UserInfo) => responder ! info
+  //              case None => responder ! UserOpFailed
+  //            }
+  //          }
+  //        }
+  //      } ~
 
-      //  // Picture Actions
-      //  pathPrefix("picture") {
-      //    pathEnd {
-      //      post {
-      //        entity(as[Picture]) { newPicture => mapRequestContext =>
-      //          val responder = createResponder(requestContext)
-      //
-      //        }
-      //      }
-      //    }
-      //  }
-
+  //  // Picture Actions
+  //  pathPrefix("picture") {
+  //    pathEnd {
+  //      post {
+  //        entity(as[Picture]) { newPicture => mapRequestContext =>
+  //          val responder = createResponder(requestContext)
+  //
+  //        }
+  //      }
+  //    }
+  //  }
 
 
   private def createResponder(requestContext: RequestContext): ActorRef = {
