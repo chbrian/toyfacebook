@@ -20,6 +20,8 @@ object Server extends App {
   val restActor = system.actorOf(Props[RestActor], "rest-api")
   val userActor = system.actorOf(Props[UserActor], "userActor")
   val postActor = system.actorOf(Props[PostActor], "postActor")
+  val albumActor = system.actorOf(Props[AlbumActor], "albumActor")
+  val pictureActor = system.actorOf(Props[PictureActor], "pictureActor")
 
   implicit val executionContext = system.dispatcher
   implicit val timeout = Timeout(2.seconds)

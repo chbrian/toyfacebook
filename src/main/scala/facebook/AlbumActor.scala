@@ -39,10 +39,12 @@ class AlbumActor extends BasicActor {
     albums -= albumId
     val future = userActor ? RemoveAlbum(album.ownerId, albumId)
     Await.result(future, timeout.duration).asInstanceOf[Boolean] match {
+      case true => true
       case false =>
         log.warning("Album {} can't be removed from user side.", albumId)
+        true
     }
-    true
+
   }
 
   def receive = {

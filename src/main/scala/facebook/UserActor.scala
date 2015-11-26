@@ -66,17 +66,17 @@ class UserActor extends Actor {
   }
 
   // Album Actions
-  def addAlbum(id: String, albumId: Int): Boolean = {
-    if (!users.contains(id))
+  def addAlbum(ownerId: String, albumId: Int): Boolean = {
+    if (!users.contains(ownerId))
       return false
-    users(id).albums.append(albumId)
+    users(ownerId).albums.append(albumId)
     true
   }
 
-  def removeAlbum(id: String, albumId: Int): Boolean = {
-    if (!users.contains(id))
+  def removeAlbum(ownerId: String, albumId: Int): Boolean = {
+    if (!users.contains(ownerId))
       return false
-    users(id).albums -= albumId
+    users(ownerId).albums -= albumId
     true
   }
 
@@ -102,10 +102,10 @@ class UserActor extends Actor {
     case RemovePost(id: String, postId: Int) =>
       sender ! removePost(id, postId)
 
-    case AddAlbum(id: String, albumId: Int) =>
-      sender ! addAlbum(id, albumId)
+    case AddAlbum(ownerId: String, albumId: Int) =>
+      sender ! addAlbum(ownerId, albumId)
 
-    case RemoveAlbum(id: String, albumId: Int) =>
-      sender ! removeAlbum(id, albumId)
+    case RemoveAlbum(ownerId: String, albumId: Int) =>
+      sender ! removeAlbum(ownerId, albumId)
   }
 }

@@ -144,6 +144,7 @@ trait RestApi extends HttpService with ActorLogging {
         } ~
           path(Segment) { albumId =>
             get { requestContext =>
+              log.info("Get album get request: {}", albumId)
               val responder = createResponder(requestContext)
               val future = albumActor ? GetAlbum(albumId.toInt)
               Await.result(future, timeout.duration).asInstanceOf[Option[Album]] match {
@@ -153,10 +154,10 @@ trait RestApi extends HttpService with ActorLogging {
             } ~
               delete { requestContext =>
                 val responder = createResponder(requestContext)
-                val future = albumActor ? DeletePost(albumId.toInt)
+                val future = albumActor ? DeleteAlbum(albumId.toInt)
                 Await.result(future, timeout.duration).asInstanceOf[Boolean] match {
                   case true => responder ! "Album Deleted."
-                  case false => responder ! PostOpFailed
+                  case false => responder ! AlbumOpFailed
                 }
               }
           }

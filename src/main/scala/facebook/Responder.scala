@@ -31,6 +31,22 @@ class Responder(requestContext: RequestContext) extends Actor with ActorLogging 
       requestContext.complete(StatusCodes.NotFound)
       killYourself
 
+    case album: Album =>
+      requestContext.complete(StatusCodes.OK, album)
+      killYourself
+
+    case AlbumOpFailed =>
+      requestContext.complete(StatusCodes.NotFound)
+      killYourself
+
+    case picture: Picture =>
+      requestContext.complete(StatusCodes.OK, picture)
+      killYourself
+
+    case PictureOpFailed =>
+      requestContext.complete(StatusCodes.NotFound)
+      killYourself
+
     case str: String =>
       requestContext.complete(StatusCodes.OK, str)
 

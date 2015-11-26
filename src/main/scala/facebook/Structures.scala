@@ -55,9 +55,9 @@ object Structures {
 
   case class DeleteAlbum(albumId: Int)
 
-  case class AddAlbum(id: String, albumId: Int)
+  case class AddAlbum(ownerid: String, albumId: Int)
 
-  case class RemoveAlbum(id: String, albumId: Int)
+  case class RemoveAlbum(ownerid: String, albumId: Int)
 
   case class AddPicture(albumId: Int, pictureId: Int)
 

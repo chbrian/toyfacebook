@@ -39,7 +39,7 @@ class PostActor extends BasicActor {
     posts -= postId
     val future = userActor ? RemovePost(post.ownerId, postId)
     Await.result(future, timeout.duration).asInstanceOf[Boolean] match {
-      case true => return true
+      case true => true
       case false =>
         log.warning("Post {} can't be removed from user side.", postId)
         true
