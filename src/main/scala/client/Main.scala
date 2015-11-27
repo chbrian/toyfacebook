@@ -18,6 +18,7 @@ object Main extends App with Requests {
   sys.addShutdownHook(system.shutdown())
 
   import system.dispatcher
+
   val log = Logging(system, getClass)
 
   val host = "http://localhost:8080/"
@@ -31,14 +32,16 @@ object Main extends App with Requests {
     case Failure(error) => log.warning("Create user {} request error: {}", id, error.getMessage)
   }
 
-  Thread.sleep(1000)  // TODO: use actor or future composition instead of sleep (blocking!)
+  Thread.sleep(1000)
+  // TODO: use actor or future composition instead of sleep (blocking!)
   val result1 = getUser(host, id)
   result1 onComplete {
     case Success(response) => log.info("Get user {}, received response: {}", id, response)
     case Failure(error) => log.warning("Get user {} request error: {}", id, error.getMessage)
   }
 
-  Thread.sleep(1000)  // TODO: use actor or future composition instead of sleep (blocking!)
+  Thread.sleep(1000)
+  // TODO: use actor or future composition instead of sleep (blocking!)
   val result3 = deleteUser(host, id)
   result3 onComplete {
     case Success(response) => log.info("Delete user {}, received response: {}", id, response)

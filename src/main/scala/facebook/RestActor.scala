@@ -32,6 +32,9 @@ trait RestApi extends HttpService with ActorLogging {
   val postActor = context.actorSelection("/user/postActor")
   val albumActor = context.actorSelection("/user/albumActor")
   val pictureActor = context.actorSelection("/user/pictureActor")
+  val profileActor = context.actorSelection("/user/profileActor")
+  val groupActor = context.actorSelection("/user/groupActor")
+  val eventActor = context.actorSelection("/user/eventActor")
 
   def routes: Route =
   //  User Actions
@@ -194,43 +197,50 @@ trait RestApi extends HttpService with ActorLogging {
                 }
               }
           }
+      } ~
+      pathPrefix("profile") {
+        pathEnd {
+          post {
+            entity(as[Profile]) { profile => requestContext =>
+              log.info("Get profile creation request: {}", profile)
+              val responder = createResponder(requestContext)
+              val future = profileActor ? CreateProfile(profile)
+              Await.result(future, timeout.duration).asInstanceOf[Boolean] match {
+                case true => responder ! "Profile created."
+                case false => responder ! ProfileOpFailed
+              }
+            }
+          }
+        } ~
+          path(Segment) { profileId =>
+            get { requestContext =>
+              val responder = createResponder(requestContext)
+              val future = profileActor ? GetProfile(profileId.toInt)
+              Await.result(future, timeout.duration).asInstanceOf[Option[Profile]] match {
+                case Some(profile: Profile) => profile.fbType match {
+                  case "user" =>
+                    val future = userActor ? GetUser(profile.fbId)
+                    Await.result(future, timeout.duration).asInstanceOf[Option[User]] match {
+                      case Some(user: User) => responder ! user
+                      case None => responder ! ProfileOpFailed
+                    }
+
+                  case "page" =>
+                    val future = userActor ? GetPage(profile.fbId.toInt)
+                    Await.result(future, timeout.duration).asInstanceOf[Option[Page]] match {
+                      case Some(page: Page) => responder ! page
+                      case None => responder ! ProfileOpFailed
+                    }
+
+                  // TODO: group
+                  // TODO: event
+                }
+                case None => responder ! PictureOpFailed
+              }
+
+            }
+          }
       }
-
-  //          } ~
-  //      pathPrefix("addfriend") {
-  //        path(Segment / Segment) { (id, friendId) =>
-  //          put { requestContext =>
-  //            val responder = createResponder(requestContext)
-  //            USERS.addFriend(id, friendId) match {
-  //              case true => responder ! FriendAdded
-  //              case _ => responder ! UserOpFailed
-  //            }
-  //          }
-  //        }
-  //      } ~
-  //      pathPrefix("info") {
-  //        path(Segment) { id =>
-  //          get { requestContext =>
-  //            val responder = createResponder(requestContext)
-  //            USERS.getUserInfo(id) match {
-  //              case Some(info: UserInfo) => responder ! info
-  //              case None => responder ! UserOpFailed
-  //            }
-  //          }
-  //        }
-  //      } ~
-
-  //  // Picture Actions
-  //  pathPrefix("picture") {
-  //    pathEnd {
-  //      post {
-  //        entity(as[Picture]) { newPicture => mapRequestContext =>
-  //          val responder = createResponder(requestContext)
-  //
-  //        }
-  //      }
-  //    }
-  //  }
 
 
   private def createResponder(requestContext: RequestContext): ActorRef = {

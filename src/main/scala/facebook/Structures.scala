@@ -20,31 +20,41 @@ object Structures {
 
   case class CreateUser(user: User)
 
-  case class GetUser(id: String)
+  case class GetUser(userId: String)
 
-  case class DeleteUser(id: String)
+  case class DeleteUser(userId: String)
 
-  case class AddFriend(id: String, friendId: String)
+  case class AddFriend(userId: String, friendId: String)
 
-  case class RemoveFriend(id: String, friendId: String)
+  case class RemoveFriend(userId: String, friendId: String)
 
   case object UserOpFailed
-
 
   // FB REST post requests
   case class Post(ownerId: String, content: String)
 
   case class CreatePost(post: Post)
 
-  case class GetPost(id: Int)
+  case class GetPost(postId: Int)
 
-  case class DeletePost(id: Int)
+  case class DeletePost(postId: Int)
 
-  case class AddPost(id: String, postId: Int)
+  case class AddPost(userId: String, postId: Int)
 
-  case class RemovePost(id: String, postId: Int)
+  case class RemovePost(userId: String, postId: Int)
 
   case object PostOpFailed
+
+  // FB REST profile requests
+  case class Profile(fbType: String, fbId: String)
+
+  case class CreateProfile(profile: Profile)
+
+  case class GetProfile(profileId: Int)
+
+  case class DeleteProfile(profileId: Int)
+
+  case object ProfileOpFailed
 
   // FB REST album requests
   case class Album(ownerId: String, name: String, pictures: ArrayBuffer[Int] = new ArrayBuffer[Int]())
@@ -74,11 +84,19 @@ object Structures {
 
   case class DeletePicture(pictureId: Int)
 
-  case object PictureCreated
-
-  case object PictureDeleted
-
   case object PictureOpFailed
+
+  // FB REST group requests
+  case class Group(id: String, userId: String, name: String, members: ArrayBuffer[String] = new ArrayBuffer[String](),
+                   albums: ArrayBuffer[Int] = new ArrayBuffer[Int](), events: ArrayBuffer[Int] = new ArrayBuffer[Int]())
+
+  case class CreateGroup(group: Group)
+
+  case class GetGroup(groupId: String)
+
+  case class DeleteGroup(groupId: String)
+
+  case object GroupOpFailed
 
 
   // Json for User
@@ -114,6 +132,11 @@ object Structures {
     implicit val format = jsonFormat2(Post.apply)
   }
 
+  // Json for Profile
+  object Profile extends DefaultJsonProtocol {
+    implicit val format = jsonFormat2(Profile.apply)
+  }
+
   // Json for Album
   object Album extends DefaultJsonProtocol {
 
@@ -132,7 +155,7 @@ object Structures {
             new Album(ownerId, name)
           case Seq(JsString(ownerId), JsString(name), JsArray(pictures)) =>
             new Album(ownerId, name, pictures.map(x => x.toString.toInt).to[ArrayBuffer])
-          case _ => throw new DeserializationException("User expected")
+          case _ => throw new DeserializationException("Album expected")
         }
       }
     }
@@ -155,7 +178,36 @@ object Structures {
         value.asJsObject.getFields("albumId", "name", "content") match {
           case Seq(JsString(albumId), JsString(name), JsArray(content)) =>
             new Picture(albumId.toInt, name, content.map(x => x.toString.toByte).to[ArrayBuffer])
-          case _ => throw new DeserializationException("User expected")
+          case _ => throw new DeserializationException("Picture expected")
+        }
+      }
+    }
+
+  }
+
+  // Json for Group
+  object Group extends DefaultJsonProtocol {
+
+    implicit object PageJsonFormat extends RootJsonFormat[Group] {
+      //          id: String, userId: String, name: String, members: ArrayBuffer[String] = new ArrayBuffer[String](),
+      //        albums: ArrayBuffer[Int] = new ArrayBuffer[Int](), events
+      def write(group: Group) = JsObject(
+        Map(
+          "id" -> JsString(group.id),
+          "userId" -> JsString(group.userId),
+          "name" -> JsString(group.name),
+          "members" -> JsArray(group.members.map(_.toJson).toVector),
+          "albums" -> JsArray(group.albums.map(_.toJson).toVector),
+          "events" -> JsArray(group.events.map(_.toJson).toVector)
+        )
+      )
+
+      def read(value: JsValue) = {
+        value.asJsObject.getFields("id", "userId", "name", "members", "albums", "events") match {
+          case Seq(JsString(id), JsString(userId), JsString(name), JsArray(members), JsArray(albums), JsArray(events)) =>
+            new Group(id, userId, name, members.map(x => x.toString).to[ArrayBuffer],
+              albums.map(x => x.toString.toInt).to[ArrayBuffer], events.map(x => x.toString.toInt).to[ArrayBuffer])
+          case _ => throw new DeserializationException("Group expected")
         }
       }
     }
@@ -163,6 +215,3 @@ object Structures {
   }
 
 }
-
-
-//}

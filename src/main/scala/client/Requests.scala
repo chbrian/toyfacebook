@@ -10,6 +10,7 @@ import spray.client.pipelining._
 import spray.httpx.SprayJsonSupport._
 import spray.http.{HttpRequest, HttpResponse}
 
+import scala.collection.mutable.ArrayBuffer
 import scala.concurrent.Future
 import scala.concurrent.duration._
 
@@ -36,7 +37,7 @@ trait Requests {
 
     val pipeline: HttpRequest => Future[User] = sendReceive ~> unmarshal[User]
 
-    val response: Future[User] = pipeline(Get(host + "info/" + id))
+    val response: Future[User] = pipeline(Get(host + "user/" + id))
     response
   }
 
@@ -49,5 +50,35 @@ trait Requests {
     }
   }
 
+  def createPicture(host: String, albumId: Int, name: String, contentPath: String)(implicit system: ActorSystem):
+  Future[HttpResponse] = {
+    import system.dispatcher
 
+    val pipeline: HttpRequest => Future[HttpResponse] = sendReceive
+
+    val source = scala.io.Source.fromFile(contentPath)
+    val content = source.map(_.toByte).to[ArrayBuffer]
+    source.close()
+
+    val response: Future[HttpResponse] = pipeline(Post(host + "picture", Picture(albumId, name, content)))
+    response
+  }
+
+  def getPicture(host: String, id: Int)(implicit system: ActorSystem): Future[Picture] = {
+    import system.dispatcher
+
+    val pipeline: HttpRequest => Future[Picture] = sendReceive ~> unmarshal[Picture]
+
+    val response: Future[Picture] = pipeline(Get(host + "picture" + id))
+    response
+  }
+
+  def deletePicture(host: String, pictureId: Int)(implicit system: ActorSystem): Future[String] = {
+    import system.dispatcher
+    for {
+      response <- (IO(Http) ? Delete(host + "picture/" + pictureId)).mapTo[HttpResponse]
+    } yield {
+      response.status.toString
+    }
+  }
 }

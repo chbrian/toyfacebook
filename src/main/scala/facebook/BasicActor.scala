@@ -14,5 +14,8 @@ abstract class BasicActor extends Actor with ActorLogging {
   val postActor = context.actorSelection("/user/postActor")
   val albumActor = context.actorSelection("/user/albumActor")
   val pictureActor = context.actorSelection("/user/pictureActor")
-
+  val profileActor = context.actorSelection("/user/profileActor")
+  val groupActor = context.actorSelection("/user/groupActor")
+  val eventActor = context.actorSelection("/user/eventActor")
+  
 }
