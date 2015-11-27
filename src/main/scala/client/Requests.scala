@@ -23,6 +23,8 @@ trait Requests {
 
   import spray.httpx.RequestBuilding._
 
+  //Request about User
+  
   def createUser(host: String, id: String, name: String, password: String)(implicit system: ActorSystem): Future[HttpResponse] = {
     import system.dispatcher
 
@@ -49,7 +51,66 @@ trait Requests {
       response.status.toString
     }
   }
+  
+  //Request about Friend
+  
+  def addFriend(host: String, id: String, friendId: String)(implicit system: ActorSystem): Future[HttpResponse] = {
+    import system.dispatcher
 
+    val pipeline: HttpRequest => Future[HttpResponse] = sendReceive
+    
+    val response: Future[HttpResponse] = pipeline(Put(host + "friend/" + friendId))
+  }
+        
+  def removeFriend(host: String, id: String, friendId: String)(implicit system: ActorSystem): Future[String] = {
+    import system.dispatcher
+    for {
+      response <- (IO(Http) ? Delete(host + "friend/" + friendId)).mapTo[HttpResponse]
+    } yield {
+      response.status.toString
+    }
+  }
+
+  //Request about Post
+  
+  def addPost(host: String, id: String, postId: Int)(implicit system: ActorSystem): Future[HttpResponse] = {
+    import system.dispatcher
+
+    val pipeline: HttpRequest => Future[HttpResponse] = sendReceive
+    
+    val response: Future[HttpResponse] = pipeline(Put(host + "post/" + postId))
+  }
+        
+  def removePost(host: String, id: String, postId: Int)(implicit system: ActorSystem): Future[String] = {
+    import system.dispatcher
+    for {
+      response <- (IO(Http) ? Delete(host + "post/" + postId)).mapTo[HttpResponse]
+    } yield {
+      response.status.toString
+    }
+  }
+  
+  //Request about Album
+  
+  def addAlbum(host: String, ownerId: String, albumId: Int)(implicit system: ActorSystem): Future[HttpResponse] = {
+    import system.dispatcher
+
+    val pipeline: HttpRequest => Future[HttpResponse] = sendReceive
+    
+    val response: Future[HttpResponse] = pipeline(Put(host + "album/" + AlbumId))
+  }
+        
+  def removeAlbum(host: String, ownerId: String, albumId: String)(implicit system: ActorSystem): Future[String] = {
+    import system.dispatcher
+    for {
+      response <- (IO(Http) ? Delete(host + "album/" + friendId)).mapTo[HttpResponse]
+    } yield {
+      response.status.toString
+    }
+  }
+  
+  //Request about Picture
+  
   def createPicture(host: String, albumId: Int, name: String, contentPath: String)(implicit system: ActorSystem):
   Future[HttpResponse] = {
     import system.dispatcher
