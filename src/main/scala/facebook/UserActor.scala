@@ -86,8 +86,9 @@ class UserActor extends BasicActor {
     val user = users(userId)
     if (user.groups.contains(groupId))
       log.warning("Group {} can't be joined by user", groupId)
-    else
+    else {
       users(userId).groups += groupId
+    }
     true
   }
 

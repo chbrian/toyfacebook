@@ -19,6 +19,7 @@ class GroupActor extends BasicActor {
     Await.result(future, timeout.duration).asInstanceOf[Boolean] match {
       case true =>
         groups += (group.id -> group)
+        groups(group.id).members += group.userId // add group owner to group member.
         true
       case false =>
         false
@@ -52,7 +53,7 @@ class GroupActor extends BasicActor {
     if (!groups.contains(groupId))
       return false
     val group = groups(groupId)
-    val future = userActor ? LeaveUserGroup(userId, groupId)
+    val future = userActor ? JoinUserGroup(userId, groupId)
     Await.result(future, timeout.duration).asInstanceOf[Boolean] match {
       case true =>
         group.members += userId
@@ -110,6 +111,38 @@ class GroupActor extends BasicActor {
     true
   }
 
+  def addAlbumGroup(albumId: Int, groupId: String): Boolean = {
+    if (!groups.contains(groupId))
+      return false
+    val group = groups(groupId)
+    if (group.albums.contains(albumId)) {
+      log.warning("Album {} already in the group", albumId)
+      true
+    }
+    else {
+      val future = albumActor ? GetAlbum(albumId)
+      Await.result(future, timeout.duration).asInstanceOf[Option[Album]] match {
+        case None =>
+          log.error("Album {} doesn't exist", albumId)
+          false
+        case Some(album: Album) =>
+          group.albums += albumId
+          true
+      }
+    }
+  }
+
+  def removeAlbumGroup(albumId: Int, groupId: String): Boolean = {
+    if (!groups.contains(groupId))
+      return false
+    val group = groups(groupId)
+    if (!group.albums.contains(albumId)) {
+      return false
+    }
+    group.albums -= albumId
+    true
+  }
+
   def receive = {
     case CreateGroup(group: Group) =>
       sender ! createGroup(group)
@@ -131,5 +164,11 @@ class GroupActor extends BasicActor {
 
     case RemoveEventGroup(eventId: Int, groupId: String) =>
       sender ! removeEventGroup(eventId, groupId)
+
+    case AddAlbumGroup(albumId: Int, groupId: String) =>
+      sender ! addAlbumGroup(albumId, groupId)
+
+    case RemoveAlbumGroup(albumId: Int, groupId: String) =>
+      sender ! removeAlbumGroup(albumId, groupId)
   }
 }

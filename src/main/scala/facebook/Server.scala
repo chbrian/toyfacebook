@@ -17,12 +17,12 @@ object Server extends App {
   sys.addShutdownHook(system.shutdown())
 
   // create and start REST api service actor
-  val restActor = system.actorOf(Props[RestActor], "rest-api")
+  val restActor = system.actorOf(Props[RestActor], "restActor")
   val userActor = system.actorOf(Props[UserActor], "userActor")
   val postActor = system.actorOf(Props[PostActor], "postActor")
   val albumActor = system.actorOf(Props[AlbumActor], "albumActor")
   val pictureActor = system.actorOf(Props[PictureActor], "pictureActor")
-  val profileActor = system.actorOf(Props[PictureActor], "profileActor")
+  val profileActor = system.actorOf(Props[ProfileActor], "profileActor")
   val groupActor = system.actorOf(Props[GroupActor], "groupActor")
   val eventActor = system.actorOf(Props[EventActor], "eventActor")
 

@@ -50,8 +50,10 @@ class AlbumActor extends BasicActor {
   def receive = {
     case CreateAlbum(album: Album) =>
       sender ! createAlbum(album)
+
     case GetAlbum(albumId: Int) =>
       sender ! getAlbum(albumId)
+
     case DeleteAlbum(albumId: Int) =>
       sender ! deleteAlbum(albumId)
 

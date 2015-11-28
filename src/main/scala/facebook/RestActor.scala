@@ -119,6 +119,30 @@ trait RestApi extends HttpService with ActorLogging {
               }
             }
           }
+        } ~
+        pathPrefix("attendEvent") {
+          path(Segment / Segment) { (userId, eventId) =>
+            put { requestContext =>
+              val responder = createResponder(requestContext)
+              val future = eventActor ? AttendEvent(userId, eventId.toInt)
+              Await.result(future, timeout.duration).asInstanceOf[Boolean] match {
+                case true => responder ! "Event attended."
+                case false => responder ! UserOpFailed
+              }
+            }
+          }
+        } ~
+        pathPrefix("cancelEvent") {
+          path(Segment / Segment) { (userId, eventId) =>
+            put { requestContext =>
+              val responder = createResponder(requestContext)
+              val future = eventActor ? CancelEvent(userId, eventId.toInt)
+              Await.result(future, timeout.duration).asInstanceOf[Boolean] match {
+                case true => responder ! "Event canceled."
+                case false => responder ! UserOpFailed
+              }
+            }
+          }
         }
     } ~
       // Post Actions
@@ -278,7 +302,12 @@ trait RestApi extends HttpService with ActorLogging {
                       case Some(group: Group) => responder ! group
                       case None => responder ! ProfileOpFailed
                     }
-                  // TODO: event
+                  case "event" =>
+                    val future = eventActor ? GetEvent(profile.fbId.toInt)
+                    Await.result(future, timeout.duration).asInstanceOf[Option[Event]] match {
+                      case Some(event: Event) => responder ! event
+                      case None => responder ! ProfileOpFailed
+                    }
                 }
                 case None => responder ! PictureOpFailed
               }

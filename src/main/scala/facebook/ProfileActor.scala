@@ -11,7 +11,6 @@ class ProfileActor extends BasicActor {
   private var profileCount = 0
 
   def createProfile(profile: Profile): Boolean = {
-
     profiles += (profileCount -> profile)
     profileCount += 1
     true

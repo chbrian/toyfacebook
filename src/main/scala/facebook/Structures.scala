@@ -31,10 +31,6 @@ object Structures {
   case class RemoveFriend(userId: String, friendId: String)
 
 
-  case class AttendEvent(userId: String, eventId: Int)
-
-  case class CancelEvent(userId: String, eventId: Int)
-
   case object UserOpFailed
 
   // FB REST post requests
@@ -72,9 +68,9 @@ object Structures {
 
   case class DeleteAlbum(albumId: Int)
 
-  case class AddAlbum(ownerid: String, albumId: Int)
+  case class AddAlbum(ownerId: String, albumId: Int)
 
-  case class RemoveAlbum(ownerid: String, albumId: Int)
+  case class RemoveAlbum(ownerId: String, albumId: Int)
 
   case class AddPicture(albumId: Int, pictureId: Int)
 
@@ -121,7 +117,7 @@ object Structures {
   case object GroupOpFailed
 
   // FB REST event requests
-  case class Event(name: String, userId: String, time: String,
+  case class Event(userId: String, name: String, time: String,
                    attending: ArrayBuffer[String] = new ArrayBuffer[String]())
 
   case class CreateEvent(event: Event)
@@ -129,6 +125,10 @@ object Structures {
   case class GetEvent(eventId: Int)
 
   case class DeleteEvent(eventId: Int)
+
+  case class AttendEvent(userId: String, eventId: Int)
+
+  case class CancelEvent(userId: String, eventId: Int)
 
   case object EventOpFailed
 
@@ -144,7 +144,7 @@ object Structures {
           "friends" -> JsArray(user.friends.map(_.toJson).toVector),
           "posts" -> JsArray(user.posts.map(_.toJson).toVector),
           "albums" -> JsArray(user.albums.map(_.toJson).toVector),
-          "groups" -> JsArray(user.albums.map(_.toJson).toVector),
+          "groups" -> JsArray(user.groups.map(_.toJson).toVector),
           "events" -> JsArray(user.events.map(_.toJson).toVector)
         )
       )
@@ -242,7 +242,10 @@ object Structures {
 
       def read(value: JsValue) = {
         value.asJsObject.getFields("id", "userId", "name", "members", "albums", "events") match {
-          case Seq(JsString(id), JsString(userId), JsString(name), JsArray(members), JsArray(albums), JsArray(events)) =>
+          case Seq(JsString(id), JsString(userId), JsString(name)) =>
+            new Group(id, userId, name)
+          case Seq(JsString(id), JsString(userId), JsString(name), JsArray(members), JsArray(albums),
+          JsArray(events)) =>
             new Group(id, userId, name, members.map(x => x.toString).to[ArrayBuffer],
               albums.map(x => x.toString.toInt).to[ArrayBuffer], events.map(x => x.toString.toInt).to[ArrayBuffer])
           case _ => throw new DeserializationException("Group expected")
@@ -267,6 +270,8 @@ object Structures {
 
       def read(value: JsValue) = {
         value.asJsObject.getFields("userId", "name", "time", "attending") match {
+          case Seq(JsString(userId), JsString(name), JsString(time)) =>
+            new Event(userId, name, time)
           case Seq(JsString(userId), JsString(name), JsString(time), JsArray(attending)) =>
             new Event(userId, name, time, attending.map(x => x.toString).to[ArrayBuffer])
           case _ => throw new DeserializationException("Event expected")

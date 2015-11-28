@@ -64,7 +64,7 @@ class EventActor extends BasicActor {
     if (!events.contains(eventId))
       return false
     val event = events(eventId)
-    if (event.attending.contains(userId))
+    if (!event.attending.contains(userId))
       return false
     val future = userActor ? CancelEvent(userId, eventId)
     Await.result(future, timeout.duration).asInstanceOf[Boolean] match {
