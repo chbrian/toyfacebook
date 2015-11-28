@@ -95,6 +95,30 @@ trait RestApi extends HttpService with ActorLogging {
               }
             }
           }
+        } ~
+        pathPrefix("joinGroup") {
+          path(Segment / Segment) { (userId, groupId) =>
+            put { requestContext =>
+              val responder = createResponder(requestContext)
+              val future = groupActor ? JoinUserGroup(userId, groupId)
+              Await.result(future, timeout.duration).asInstanceOf[Boolean] match {
+                case true => responder ! "Group Joined."
+                case _ => responder ! UserOpFailed
+              }
+            }
+          }
+        } ~
+        pathPrefix("leaveGroup") {
+          path(Segment / Segment) { (userId, groupId) =>
+            put { requestContext =>
+              val responder = createResponder(requestContext)
+              val future = groupActor ? LeaveUserGroup(userId, groupId)
+              Await.result(future, timeout.duration).asInstanceOf[Boolean] match {
+                case true => responder ! "Group Left."
+                case _ => responder ! UserOpFailed
+              }
+            }
+          }
         }
     } ~
       // Post Actions
@@ -163,6 +187,30 @@ trait RestApi extends HttpService with ActorLogging {
                   case false => responder ! AlbumOpFailed
                 }
               }
+          } ~
+          pathPrefix("addGroup") {
+            path(Segment / Segment) { (albumId, groupId) =>
+              put { requestContext =>
+                val responder = createResponder(requestContext)
+                val future = groupActor ? AddAlbumGroup(albumId.toInt, groupId)
+                Await.result(future, timeout.duration).asInstanceOf[Boolean] match {
+                  case true => responder ! "Add album to group."
+                  case false => responder ! AlbumOpFailed
+                }
+              }
+            }
+          } ~
+          pathPrefix("removeGroup") {
+            path(Segment / Segment) { (albumId, groupId) =>
+              put { requestContext =>
+                val responder = createResponder(requestContext)
+                val future = groupActor ? RemoveAlbumGroup(albumId.toInt, groupId)
+                Await.result(future, timeout.duration).asInstanceOf[Boolean] match {
+                  case true => responder ! "Remove album to group."
+                  case false => responder ! AlbumOpFailed
+                }
+              }
+            }
           }
       } ~
       pathPrefix("picture") {
@@ -224,20 +272,114 @@ trait RestApi extends HttpService with ActorLogging {
                       case Some(user: User) => responder ! user
                       case None => responder ! ProfileOpFailed
                     }
-
-                  case "page" =>
-                    val future = userActor ? GetPage(profile.fbId.toInt)
-                    Await.result(future, timeout.duration).asInstanceOf[Option[Page]] match {
-                      case Some(page: Page) => responder ! page
+                  case "group" =>
+                    val future = groupActor ? GetGroup(profile.fbId)
+                    Await.result(future, timeout.duration).asInstanceOf[Option[Group]] match {
+                      case Some(group: Group) => responder ! group
                       case None => responder ! ProfileOpFailed
                     }
-
-                  // TODO: group
                   // TODO: event
                 }
                 case None => responder ! PictureOpFailed
               }
-
+            } ~
+              delete { requestContext =>
+                val responder = createResponder(requestContext)
+                val future = profileActor ? DeleteProfile(profileId.toInt)
+                Await.result(future, timeout.duration).asInstanceOf[Boolean] match {
+                  case true => responder ! "Profile Deleted."
+                  case false => responder ! ProfileOpFailed
+                }
+              }
+          }
+      } ~
+      pathPrefix("group") {
+        pathEnd {
+          post {
+            entity(as[Group]) { group => requestContext =>
+              log.info("Get group creation request: {}", group)
+              val responder = createResponder(requestContext)
+              val future = groupActor ? CreateGroup(group)
+              Await.result(future, timeout.duration).asInstanceOf[Boolean] match {
+                case true => responder ! "Group created."
+                case false => responder ! GroupOpFailed
+              }
+            }
+          }
+        } ~
+          path(Segment) { groupId =>
+            get { requestContext =>
+              val responder = createResponder(requestContext)
+              val future = groupActor ? GetGroup(groupId)
+              Await.result(future, timeout.duration).asInstanceOf[Option[Group]] match {
+                case Some(group: Group) => responder ! group
+                case None => responder ! GroupOpFailed
+              }
+            } ~
+              delete { requestContext =>
+                val responder = createResponder(requestContext)
+                val future = groupActor ? DeleteGroup(groupId)
+                Await.result(future, timeout.duration).asInstanceOf[Boolean] match {
+                  case true => responder ! "Group Deleted."
+                  case false => responder ! GroupOpFailed
+                }
+              }
+          }
+      } ~
+      pathPrefix("event") {
+        pathEnd {
+          post {
+            entity(as[Event]) { event => requestContext =>
+              log.info("Get event creation request: {}", event)
+              val responder = createResponder(requestContext)
+              val future = eventActor ? CreateEvent(event)
+              Await.result(future, timeout.duration).asInstanceOf[Boolean] match {
+                case true => responder ! "Event created."
+                case false => responder ! EventOpFailed
+              }
+            }
+          }
+        } ~
+          path(Segment) { eventId =>
+            get { requestContext =>
+              val responder = createResponder(requestContext)
+              val future = eventActor ? GetEvent(eventId.toInt)
+              Await.result(future, timeout.duration).asInstanceOf[Option[Event]] match {
+                case Some(event: Event) => responder ! event
+                case None => responder ! GroupOpFailed
+              }
+            } ~
+              delete { requestContext =>
+                val responder = createResponder(requestContext)
+                val future = eventActor ? DeleteEvent(eventId.toInt)
+                Await.result(future, timeout.duration).asInstanceOf[Boolean] match {
+                  case true => responder ! "Event Deleted."
+                  case false => responder ! EventOpFailed
+                }
+              }
+          } ~
+          pathPrefix("addGroup") {
+            path(Segment / Segment) { (eventId, groupId) =>
+              put { requestContext =>
+                val responder = createResponder(requestContext)
+                val future = groupActor ? AddEventGroup(eventId.toInt, groupId)
+                Await.result(future, timeout.duration).asInstanceOf[Boolean] match {
+                  case true => responder ! "Add event to group."
+                  case false => responder ! EventOpFailed
+                }
+              }
+            }
+          } ~
+          pathPrefix("removeGroup") {
+            path(Segment / Segment) { (eventId, groupId) =>
+              put { requestContext =>
+                val responder = createResponder(requestContext)
+                val future = groupActor ? RemoveEventGroup(eventId.toInt, groupId)
+                Await.result(future, timeout.duration).asInstanceOf[Boolean] match {
+                  case true => responder ! "Remove event to group."
+                  case false => responder ! EventOpFailed
+                }
+              }
             }
           }
       }

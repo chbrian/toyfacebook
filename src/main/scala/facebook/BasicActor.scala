@@ -9,6 +9,7 @@ import scala.concurrent.duration._
   */
 abstract class BasicActor extends Actor with ActorLogging {
 
+
   implicit val timeout = Timeout(2.seconds)
   val userActor = context.actorSelection("/user/userActor")
   val postActor = context.actorSelection("/user/postActor")
@@ -17,5 +18,5 @@ abstract class BasicActor extends Actor with ActorLogging {
   val profileActor = context.actorSelection("/user/profileActor")
   val groupActor = context.actorSelection("/user/groupActor")
   val eventActor = context.actorSelection("/user/eventActor")
-  
+
 }

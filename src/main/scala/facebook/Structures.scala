@@ -16,7 +16,9 @@ object Structures {
   // FB REST user requests
 
   case class User(id: String, name: String, password: String, friends: ArrayBuffer[String] = new ArrayBuffer[String](),
-                  posts: ArrayBuffer[Int] = new ArrayBuffer[Int](), albums: ArrayBuffer[Int] = new ArrayBuffer[Int]())
+                  posts: ArrayBuffer[Int] = new ArrayBuffer[Int](), albums: ArrayBuffer[Int] = new ArrayBuffer[Int](),
+                  groups: ArrayBuffer[String] = new ArrayBuffer[String](),
+                  events: ArrayBuffer[Int] = new ArrayBuffer[Int]())
 
   case class CreateUser(user: User)
 
@@ -28,10 +30,15 @@ object Structures {
 
   case class RemoveFriend(userId: String, friendId: String)
 
+
+  case class AttendEvent(userId: String, eventId: Int)
+
+  case class CancelEvent(userId: String, eventId: Int)
+
   case object UserOpFailed
 
   // FB REST post requests
-  case class Post(ownerId: String, content: String)
+  case class Post(userId: String, content: String)
 
   case class CreatePost(post: Post)
 
@@ -96,8 +103,34 @@ object Structures {
 
   case class DeleteGroup(groupId: String)
 
+  // a user joins in a group
+  case class JoinUserGroup(userId: String, groupId: String)
+
+  case class LeaveUserGroup(userId: String, groupId: String)
+
+  // a event add to a group
+  case class AddEventGroup(eventId: Int, groupId: String)
+
+  case class RemoveEventGroup(eventId: Int, groupId: String)
+
+  // an album add to a group
+  case class AddAlbumGroup(albumId: Int, groupId: String)
+
+  case class RemoveAlbumGroup(albumId: Int, groupId: String)
+
   case object GroupOpFailed
 
+  // FB REST event requests
+  case class Event(name: String, userId: String, time: String,
+                   attending: ArrayBuffer[String] = new ArrayBuffer[String]())
+
+  case class CreateEvent(event: Event)
+
+  case class GetEvent(eventId: Int)
+
+  case class DeleteEvent(eventId: Int)
+
+  case object EventOpFailed
 
   // Json for User
   object User extends DefaultJsonProtocol {
@@ -110,16 +143,21 @@ object Structures {
           "password" -> JsString(user.password),
           "friends" -> JsArray(user.friends.map(_.toJson).toVector),
           "posts" -> JsArray(user.posts.map(_.toJson).toVector),
-          "albums" -> JsArray(user.albums.map(_.toJson).toVector)
+          "albums" -> JsArray(user.albums.map(_.toJson).toVector),
+          "groups" -> JsArray(user.albums.map(_.toJson).toVector),
+          "events" -> JsArray(user.events.map(_.toJson).toVector)
         )
       )
 
       def read(value: JsValue) = {
-        value.asJsObject.getFields("id", "name", "password", "friends", "posts", "albums") match {
+        value.asJsObject.getFields("id", "name", "password", "friends", "posts", "albums", "groups", "events") match {
           case Seq(JsString(id), JsString(name), JsString(password)) =>
             new User(id, name, password)
-          case Seq(JsString(id), JsString(name), JsString(password), JsArray(friends), JsArray(posts), JsArray(albums)) =>
-            new User(id, name, password)
+          case Seq(JsString(id), JsString(name), JsString(password), JsArray(friends), JsArray(posts), JsArray(albums),
+          JsArray(groups), JsArray(events)) =>
+            new User(id, name, password, friends.map(x => x.toString).to[ArrayBuffer],
+              posts.map(x => x.toString.toInt).to[ArrayBuffer], albums.map(x => x.toString.toInt).to[ArrayBuffer],
+              groups.map(x => x.toString).to[ArrayBuffer], events.map(x => x.toString.toInt).to[ArrayBuffer])
           case _ => throw new DeserializationException("User expected")
         }
       }
@@ -140,7 +178,7 @@ object Structures {
   // Json for Album
   object Album extends DefaultJsonProtocol {
 
-    implicit object UserJsonFormat extends RootJsonFormat[Album] {
+    implicit object AlbumJsonFormat extends RootJsonFormat[Album] {
       def write(album: Album) = JsObject(
         Map(
           "ownerId" -> JsString(album.ownerId),
@@ -165,7 +203,7 @@ object Structures {
   // Json for Picture
   object Picture extends DefaultJsonProtocol {
 
-    implicit object UserJsonFormat extends RootJsonFormat[Picture] {
+    implicit object PictureJsonFormat extends RootJsonFormat[Picture] {
       def write(picture: Picture) = JsObject(
         Map(
           "albumId" -> JsNumber(picture.albumId),
@@ -188,7 +226,7 @@ object Structures {
   // Json for Group
   object Group extends DefaultJsonProtocol {
 
-    implicit object PageJsonFormat extends RootJsonFormat[Group] {
+    implicit object GroupJsonFormat extends RootJsonFormat[Group] {
       //          id: String, userId: String, name: String, members: ArrayBuffer[String] = new ArrayBuffer[String](),
       //        albums: ArrayBuffer[Int] = new ArrayBuffer[Int](), events
       def write(group: Group) = JsObject(
@@ -208,6 +246,30 @@ object Structures {
             new Group(id, userId, name, members.map(x => x.toString).to[ArrayBuffer],
               albums.map(x => x.toString.toInt).to[ArrayBuffer], events.map(x => x.toString.toInt).to[ArrayBuffer])
           case _ => throw new DeserializationException("Group expected")
+        }
+      }
+    }
+
+  }
+
+  // Json for Event
+  object Event extends DefaultJsonProtocol {
+
+    implicit object EventJsonFormat extends RootJsonFormat[Event] {
+      def write(event: Event) = JsObject(
+        Map(
+          "userId" -> JsString(event.userId),
+          "name" -> JsString(event.name),
+          "time" -> JsString(event.time),
+          "attending" -> JsArray(event.attending.map(_.toJson).toVector)
+        )
+      )
+
+      def read(value: JsValue) = {
+        value.asJsObject.getFields("userId", "name", "time", "attending") match {
+          case Seq(JsString(userId), JsString(name), JsString(time), JsArray(attending)) =>
+            new Event(userId, name, time, attending.map(x => x.toString).to[ArrayBuffer])
+          case _ => throw new DeserializationException("Event expected")
         }
       }
     }

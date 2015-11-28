@@ -2,13 +2,12 @@ package facebook
 
 import akka.pattern.ask
 import scala.concurrent.Await
+import Structures._
 
 /**
   * Created by xiaoyong on 11/25/2015.
   */
 class PictureActor extends BasicActor {
-
-  import Structures._
 
   private val pictures = scala.collection.mutable.Map[Int, Picture]()
   private var pictureCount = 0
@@ -38,10 +37,11 @@ class PictureActor extends BasicActor {
     pictures -= pictureId
     val future = albumActor ? RemovePicture(picture.albumId, pictureId)
     Await.result(future, timeout.duration).asInstanceOf[Boolean] match {
+      case true => true
       case false =>
         log.warning("Picture {} can't be removed from album side.", picture.albumId)
+        true
     }
-    true
   }
 
   def receive = {

@@ -15,7 +15,7 @@ class PostActor extends BasicActor {
   private var postCount = 0
 
   def createPost(post: Post): Boolean = {
-    val future = userActor ? AddPost(post.ownerId, postCount)
+    val future = userActor ? AddPost(post.userId, postCount)
     Await.result(future, timeout.duration).asInstanceOf[Boolean] match {
       case true =>
         posts += (postCount -> post)
@@ -37,7 +37,7 @@ class PostActor extends BasicActor {
       return false
     val post = posts(postId)
     posts -= postId
-    val future = userActor ? RemovePost(post.ownerId, postId)
+    val future = userActor ? RemovePost(post.userId, postId)
     Await.result(future, timeout.duration).asInstanceOf[Boolean] match {
       case true => true
       case false =>
