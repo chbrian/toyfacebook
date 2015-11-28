@@ -168,12 +168,12 @@ trait Requests {
   
   //Request about create/get/removeAlbum
   
-  def createAlbum(host: String, userId: String, albumCount: Int)(implicit system: ActorSystem): Future[HttpResponse] = {
+  def createAlbum(host: String, userId: String, name: String)(implicit system: ActorSystem): Future[HttpResponse] = {
     import system.dispatcher
 
     val pipeline: HttpRequest => Future[HttpResponse] = sendReceive
     
-    val response: Future[HttpResponse] = pipeline(Post(host + "album/" + Album(userId, albumCount))
+    val response: Future[HttpResponse] = pipeline(Post(host + "album/" + Album(userId, name))
   }
   
   def getAlbum(host: String, albumId: Int)(implicit system: ActorSystem): Future[Album] = {
@@ -238,23 +238,7 @@ trait Requests {
       response.status.toString
     }
   }
-  
-  def addEventGroup(host: String, eventId: Int, groupId: String)(implicit system: ActorSystem): Future[HttpResponse] = {
-    import system.dispatcher
 
-    val pipeline: HttpRequest => Future[HttpResponse] = sendReceive
-    
-    val response: Future[HttpResponse] = pipeline(Put(host + "event/" + eventId + "group/" + groupId))
-  }
-        
-  def removeEventGroup(host: String, eventId: Int, groupId: String)(implicit system: ActorSystem): Future[String] = {
-    import system.dispatcher
-    for {
-      response <- (IO(Http) ? Delete(host + "event/" + eventId + "group/" + groupId)).mapTo[HttpResponse]
-    } yield {
-      response.status.toString
-    }
-  }
   
    def addAlbumGroup(host: String, albumId: Int, groupId: String)(implicit system: ActorSystem): Future[HttpResponse] = {
     import system.dispatcher
@@ -313,6 +297,23 @@ trait Requests {
     import system.dispatcher
     for {
       response <- (IO(Http) ? Delete(host + "event/" + eventId)).mapTo[HttpResponse]
+    } yield {
+      response.status.toString
+    }
+  }
+  
+   def addEventGroup(host: String, eventId: Int, groupId: String)(implicit system: ActorSystem): Future[HttpResponse] = {
+    import system.dispatcher
+
+    val pipeline: HttpRequest => Future[HttpResponse] = sendReceive
+    
+    val response: Future[HttpResponse] = pipeline(Put(host + "event/" + eventId + "group/" + groupId))
+  }
+        
+  def removeEventGroup(host: String, eventId: Int, groupId: String)(implicit system: ActorSystem): Future[String] = {
+    import system.dispatcher
+    for {
+      response <- (IO(Http) ? Delete(host + "event/" + eventId + "group/" + groupId)).mapTo[HttpResponse]
     } yield {
       response.status.toString
     }
