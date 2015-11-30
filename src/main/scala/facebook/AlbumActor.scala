@@ -47,6 +47,28 @@ class AlbumActor extends BasicActor {
 
   }
 
+  def addPicture(albumId: Int, pictureId: Int): Boolean ={
+    if(!albums.contains(albumId))
+      return false
+    val album = albums(albumId)
+    if (album.pictures.contains(pictureId))
+      log.warning("Album {} already has the picture.", albumId)
+    album.pictures += pictureId
+    true
+  }
+
+  def removePicture(albumId: Int, pictureId: Int): Boolean ={
+    if(!albums.contains(albumId))
+      return false
+    val album = albums(albumId)
+    if (!album.pictures.contains(pictureId)){
+      log.warning("Album {} hasn't the picture.", albumId)
+      return false
+    }
+    album.pictures -= pictureId
+    true
+  }
+
   def receive = {
     case CreateAlbum(album: Album) =>
       sender ! createAlbum(album)
@@ -57,5 +79,10 @@ class AlbumActor extends BasicActor {
     case DeleteAlbum(albumId: Int) =>
       sender ! deleteAlbum(albumId)
 
+    case AddPicture(albumId: Int, pictureId: Int) =>
+      sender ! addPicture(albumId, pictureId)
+
+    case RemovePicture(albumId: Int, pictureId: Int) =>
+      sender ! removePicture(albumId, pictureId)
   }
 }

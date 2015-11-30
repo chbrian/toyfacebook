@@ -63,7 +63,7 @@ trait RestApi extends HttpService with ActorLogging {
             }
           } ~
             delete { requestContext =>
-              log.info("Delete user request: {}", id)
+              log.info("Get user deletion request: {}", id)
               val responder = createResponder(requestContext)
               val future = userActor ? DeleteUser(id)
               Await.result(future, timeout.duration).asInstanceOf[Boolean] match {
@@ -162,6 +162,7 @@ trait RestApi extends HttpService with ActorLogging {
         } ~
           path(Segment) { postId =>
             get { requestContext =>
+              log.info("Get post get request: {}", postId)
               val responder = createResponder(requestContext)
               val future = postActor ? GetPost(postId.toInt)
               Await.result(future, timeout.duration).asInstanceOf[Option[Post]] match {
@@ -170,6 +171,7 @@ trait RestApi extends HttpService with ActorLogging {
               }
             } ~
               delete { requestContext =>
+                log.info("Get post deletion request: {}", postId)
                 val responder = createResponder(requestContext)
                 val future = postActor ? DeletePost(postId.toInt)
                 Await.result(future, timeout.duration).asInstanceOf[Boolean] match {
@@ -204,6 +206,7 @@ trait RestApi extends HttpService with ActorLogging {
               }
             } ~
               delete { requestContext =>
+                log.info("Get album deletion request: {}", albumId)
                 val responder = createResponder(requestContext)
                 val future = albumActor ? DeleteAlbum(albumId.toInt)
                 Await.result(future, timeout.duration).asInstanceOf[Boolean] match {
@@ -241,7 +244,7 @@ trait RestApi extends HttpService with ActorLogging {
         pathEnd {
           post {
             entity(as[Picture]) { picture => requestContext =>
-              log.info("Get picture creation request: {}", picture)
+              log.info("Get picture creation request: {}", picture.name)
               val responder = createResponder(requestContext)
               val future = pictureActor ? CreatePicture(picture)
               Await.result(future, timeout.duration).asInstanceOf[Boolean] match {
@@ -253,6 +256,7 @@ trait RestApi extends HttpService with ActorLogging {
         } ~
           path(Segment) { pictureId =>
             get { requestContext =>
+              log.info("Get picture get request: {}", pictureId)
               val responder = createResponder(requestContext)
               val future = pictureActor ? GetPicture(pictureId.toInt)
               Await.result(future, timeout.duration).asInstanceOf[Option[Picture]] match {
@@ -261,6 +265,7 @@ trait RestApi extends HttpService with ActorLogging {
               }
             } ~
               delete { requestContext =>
+                log.info("Get picture deletion request: {}", pictureId)
                 val responder = createResponder(requestContext)
                 val future = pictureActor ? DeletePicture(pictureId.toInt)
                 Await.result(future, timeout.duration).asInstanceOf[Boolean] match {
@@ -286,6 +291,7 @@ trait RestApi extends HttpService with ActorLogging {
         } ~
           path(Segment) { profileId =>
             get { requestContext =>
+              log.info("Get profile get request: {}", profileId)
               val responder = createResponder(requestContext)
               val future = profileActor ? GetProfile(profileId.toInt)
               Await.result(future, timeout.duration).asInstanceOf[Option[Profile]] match {
@@ -313,6 +319,7 @@ trait RestApi extends HttpService with ActorLogging {
               }
             } ~
               delete { requestContext =>
+                log.info("Get profile deletion request: {}", profileId)
                 val responder = createResponder(requestContext)
                 val future = profileActor ? DeleteProfile(profileId.toInt)
                 Await.result(future, timeout.duration).asInstanceOf[Boolean] match {
@@ -338,6 +345,7 @@ trait RestApi extends HttpService with ActorLogging {
         } ~
           path(Segment) { groupId =>
             get { requestContext =>
+              log.info("Get group get request: {}", groupId)
               val responder = createResponder(requestContext)
               val future = groupActor ? GetGroup(groupId)
               Await.result(future, timeout.duration).asInstanceOf[Option[Group]] match {
@@ -346,6 +354,7 @@ trait RestApi extends HttpService with ActorLogging {
               }
             } ~
               delete { requestContext =>
+                log.info("Get group deletion request: {}", groupId)
                 val responder = createResponder(requestContext)
                 val future = groupActor ? DeleteGroup(groupId)
                 Await.result(future, timeout.duration).asInstanceOf[Boolean] match {
@@ -371,6 +380,7 @@ trait RestApi extends HttpService with ActorLogging {
         } ~
           path(Segment) { eventId =>
             get { requestContext =>
+              log.info("Get event get request: {}", eventId)
               val responder = createResponder(requestContext)
               val future = eventActor ? GetEvent(eventId.toInt)
               Await.result(future, timeout.duration).asInstanceOf[Option[Event]] match {
@@ -379,6 +389,7 @@ trait RestApi extends HttpService with ActorLogging {
               }
             } ~
               delete { requestContext =>
+                log.info("Get event deletion request: {}", eventId)
                 val responder = createResponder(requestContext)
                 val future = eventActor ? DeleteEvent(eventId.toInt)
                 Await.result(future, timeout.duration).asInstanceOf[Boolean] match {

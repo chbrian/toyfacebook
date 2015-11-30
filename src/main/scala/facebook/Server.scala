@@ -27,7 +27,7 @@ object Server extends App {
   val eventActor = system.actorOf(Props[EventActor], "eventActor")
 
   implicit val executionContext = system.dispatcher
-  implicit val timeout = Timeout(10.seconds)
+  implicit val timeout = Timeout(30.seconds)
   // start a new HTTP server on port 8080 with our service actor as the handler
   IO(Http) ? Http.Bind(restActor, interface = "localhost", port = 8080)
 }

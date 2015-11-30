@@ -79,7 +79,7 @@ object Structures {
   case object AlbumOpFailed
 
   // FB REST picture requests
-  case class Picture(albumId: Int, name: String, content: ArrayBuffer[Byte] = new ArrayBuffer[Byte]())
+  case class Picture(albumId: Int, name: String, content: ArrayBuffer[Byte]= new ArrayBuffer[Byte]())
 
   case class CreatePicture(picture: Picture)
 
@@ -156,8 +156,8 @@ object Structures {
           case Seq(JsString(id), JsString(name), JsString(password), JsArray(friends), JsArray(posts), JsArray(albums),
           JsArray(groups), JsArray(events)) =>
             new User(id, name, password, friends.map(x => x.toString).to[ArrayBuffer],
-              posts.map(x => x.toString.toInt).to[ArrayBuffer], albums.map(x => x.toString.toInt).to[ArrayBuffer],
-              groups.map(x => x.toString).to[ArrayBuffer], events.map(x => x.toString.toInt).to[ArrayBuffer])
+              posts.map(x => x.toString.toInt).to[ArrayBuffer], albums.map(x => x.convertTo[Int]).to[ArrayBuffer],
+              groups.map(x => x.toString).to[ArrayBuffer], events.map(x => x.convertTo[Int]).to[ArrayBuffer])
           case _ => throw new DeserializationException("User expected")
         }
       }
@@ -192,7 +192,7 @@ object Structures {
           case Seq(JsString(ownerId), JsString(name)) =>
             new Album(ownerId, name)
           case Seq(JsString(ownerId), JsString(name), JsArray(pictures)) =>
-            new Album(ownerId, name, pictures.map(x => x.toString.toInt).to[ArrayBuffer])
+            new Album(ownerId, name, pictures.map(x => x.convertTo[Int]).to[ArrayBuffer])
           case _ => throw new DeserializationException("Album expected")
         }
       }
@@ -214,8 +214,10 @@ object Structures {
 
       def read(value: JsValue) = {
         value.asJsObject.getFields("albumId", "name", "content") match {
-          case Seq(JsString(albumId), JsString(name), JsArray(content)) =>
-            new Picture(albumId.toInt, name, content.map(x => x.toString.toByte).to[ArrayBuffer])
+          case Seq(JsNumber(albumId), JsString(name)) =>
+            new Picture(albumId.toInt, name)
+          case Seq(JsNumber(albumId), JsString(name), JsArray(content)) =>
+            new Picture(albumId.toInt, name, content.map(x => x.convertTo[Byte]).to[ArrayBuffer])
           case _ => throw new DeserializationException("Picture expected")
         }
       }
@@ -247,7 +249,7 @@ object Structures {
           case Seq(JsString(id), JsString(userId), JsString(name), JsArray(members), JsArray(albums),
           JsArray(events)) =>
             new Group(id, userId, name, members.map(x => x.toString).to[ArrayBuffer],
-              albums.map(x => x.toString.toInt).to[ArrayBuffer], events.map(x => x.toString.toInt).to[ArrayBuffer])
+              albums.map(x => x.toString.toInt).to[ArrayBuffer], events.map(x => x.convertTo[Int]).to[ArrayBuffer])
           case _ => throw new DeserializationException("Group expected")
         }
       }
