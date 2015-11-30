@@ -42,9 +42,21 @@ object Main extends App with Requests {
 
   case class CreatePicture(albumId: Int, location: String)
 
-  case class GetPicture(albumId: Int)
+  case class GetPicture(pictureId: Int, location: String)
 
-  case class DeletePicture(albumId: Int)
+  case class DeletePicture(pictureId: Int)
+
+  case class CreateProfile(fbType: String, fbId: String)
+
+  case class GetProfile(profileId: Int)
+
+  case class DeleteProfile(profileId: Int)
+
+  case class CreateEvent(userId: String)
+
+  case class GetEvent(eventId: Int)
+
+  case class DeleteEvent(eventId: Int)
 
   // Create an ActorSystem to host our client application in
   implicit val system = ActorSystem("client")
@@ -213,8 +225,10 @@ object Main extends App with Requests {
   def getPicture: Unit ={
     val testerArray = (1 to pictureTestScale).map(x => system.actorOf(Props[Tester]))
     var index = 0
+
     for (tester <- testerArray) {
-      tester ! GetPicture(index)
+      val newLocation = "src\\main\\scala\\client\\"+index+"received.jpg"
+      tester ! GetPicture(index, newLocation)
       index += 1
     }
   }
@@ -229,23 +243,92 @@ object Main extends App with Requests {
     }
   }
 
+  // event creation test
+  def createEvent: Unit = {
+    val testerArray = (1 to eventTestScale).map(x => system.actorOf(Props[Tester]))
+    var index = 0
+    for (tester <- testerArray) {
+      val sb = new StringBuilder
+      idList(index).map(x => sb.append(x))
+      tester ! CreateEvent(sb.toString)
+      index += 1
+    }
+  }
+
+  // profile getter test
+  def getEvent: Unit = {
+    val testerArray = (1 to eventTestScale).map(x => system.actorOf(Props[Tester]))
+    var index = 0
+    for (tester <- testerArray) {
+      tester ! GetEvent(index)
+      index += 1
+    }
+  }
+
+  // profile delete test
+  def deleteEvent: Unit = {
+    val testerArray = (1 to eventTestScale).map(x => system.actorOf(Props[Tester]))
+    var index = 0
+    for (tester <- testerArray) {
+      tester ! DeleteEvent(index)
+      index += 1
+    }
+  }
+
+  // profile creation test
+  def createProfile: Unit = {
+    val testerArray = (1 to profileTestScale).map(x => system.actorOf(Props[Tester]))
+    var index = 0
+    for (tester <- testerArray) {
+      val sb = new StringBuilder
+      idList(index).map(x => sb.append(x))
+      tester ! CreateProfile("user", sb.toString)
+      tester ! CreateProfile("group", sb.toString)
+      tester ! CreateProfile("event", sb.toString)
+      index += 1
+    }
+  }
+
+  // profile getter test
+  def getProfile: Unit = {
+    val testerArray = (1 to profileTestScale).map(x => system.actorOf(Props[Tester]))
+    var index = 0
+    for (tester <- testerArray) {
+      tester ! GetProfile(index)
+      index += 1
+    }
+  }
+
+  // profile delete test
+  def deleteProfile: Unit = {
+    val testerArray = (1 to profileTestScale).map(x => system.actorOf(Props[Tester]))
+    var index = 0
+    for (tester <- testerArray) {
+      tester ! DeleteProfile(index)
+      index += 1
+    }
+  }
 
   val userTestScale = 1
   val groupTestScale = 1
   val postTestScale = 1
   val albumTestScale = 1
   val pictureTestScale = 1
+  val profileTestScale = 1 // profileTestScale should be smaller than user, group and event
+  val eventTestScale = 1
 
+
+  // compose test case
   createUser
   Thread sleep 1000
   getUser
   Thread sleep 1000
   //  deleteUser
   //  Thread sleep 1000
-//  createGroup
-//  Thread sleep 1000
-//  getGroup
-//  Thread sleep 1000
+  createGroup
+  Thread sleep 1000
+  getGroup
+  Thread sleep 1000
 //  deleteGroup
 //  Thread sleep 1000
 //  createPost
@@ -260,12 +343,26 @@ object Main extends App with Requests {
   Thread sleep 1000
 //  deleteAlbum
 //  Thread sleep 1000
-  createPicture
+
+//  createPicture
+//  Thread sleep 1000
+//  getPicture
+//  Thread sleep 1000
+//  deletePicture
+//  Thread sleep 1000
+
+  createEvent
   Thread sleep 1000
-  getPicture
+  getEvent
   Thread sleep 1000
-  deletePicture
+  deleteEvent
   Thread sleep 1000
 
+  createProfile
+  Thread sleep 1000
+//  getProfile
+//  Thread sleep 1000
+  deleteProfile
+  Thread sleep 1000
 
 }

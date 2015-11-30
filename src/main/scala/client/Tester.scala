@@ -2,13 +2,15 @@ package client
 
 import javax.imageio.ImageIO
 import scala.collection.mutable.ArrayBuffer
-import scala.io.Source
+import scala.io.{Source}
 import scala.util.Random
 import scala.concurrent.Future
 import scala.concurrent.duration._
 import scala.util.{Failure, Success}
 
 import client.Main._
+
+import java.io.{BufferedOutputStream, FileOutputStream, File, PrintWriter}
 
 import akka.actor.{Props, ActorLogging, ActorSystem, Actor}
 import akka.io.IO
@@ -37,6 +39,14 @@ class Tester extends Actor with ActorLogging{
     sb.toString
   }
 
+  def randomTime() = {
+    val sb = new StringBuilder
+    sb.append(Random.nextInt(12)+"/") // month
+    sb.append(Random.nextInt(30)+"/") // day
+    sb.append(Random.nextInt(100)+" ") // year
+    sb.toString()
+  }
+
   implicit val timeout: Timeout = 60.seconds
 
   val system = context.system
@@ -44,27 +54,21 @@ class Tester extends Actor with ActorLogging{
   // user test
   def createUser(id: String, name: String, password: String): Future[HttpResponse] = {
     import system.dispatcher
-
     val pipeline: HttpRequest => Future[HttpResponse] = sendReceive
-
     val response: Future[HttpResponse] = pipeline(Post(host + "user", facebook.Structures.User(id, name, password)))
     response
   }
 
   def getUser(id: String): Future[facebook.Structures.User] = {
     import system.dispatcher
-
     val pipeline: HttpRequest => Future[facebook.Structures.User] = sendReceive ~> unmarshal[facebook.Structures.User]
-
     val response: Future[facebook.Structures.User] = pipeline(Get(host + "user/" + id))
     response
   }
 
   def deleteUser(id: String): Future[HttpResponse] = {
     import system.dispatcher
-
     val pipeline: HttpRequest => Future[HttpResponse] = sendReceive
-
     val response: Future[HttpResponse] = pipeline(Delete(host + "user/" + id))
     response
 
@@ -73,125 +77,142 @@ class Tester extends Actor with ActorLogging{
   // post test
   def createPost(userId: String, content: String): Future[HttpResponse] = {
     import system.dispatcher
-
     val pipeline: HttpRequest => Future[HttpResponse] = sendReceive
-
     val response: Future[HttpResponse] = pipeline(Post(host + "post", facebook.Structures.Post(userId, content)))
     response
   }
 
   def getPost(postId: Int): Future[facebook.Structures.Post] = {
     import system.dispatcher
-
     val pipeline: HttpRequest => Future[facebook.Structures.Post] = sendReceive ~> unmarshal[facebook.Structures.Post]
-
     val response: Future[facebook.Structures.Post] = pipeline(Get(host + "post/" + postId))
     response
   }
 
   def deletePost(postId: Int): Future[HttpResponse] = {
     import system.dispatcher
-
     val pipeline: HttpRequest => Future[HttpResponse] = sendReceive
-
     val response: Future[HttpResponse] = pipeline(Delete(host + "post/" + postId))
     response
-
   }
 
   // album test
   def createAlbum(userId: String, name: String): Future[HttpResponse] = {
     import system.dispatcher
-
     val pipeline: HttpRequest => Future[HttpResponse] = sendReceive
-
     val response: Future[HttpResponse] = pipeline(Post(host + "album", facebook.Structures.Album(userId, name)))
     response
   }
 
   def getAlbum(albumId: Int): Future[facebook.Structures.Album] = {
     import system.dispatcher
-
     val pipeline: HttpRequest => Future[facebook.Structures.Album] = sendReceive ~> unmarshal[facebook.Structures.Album]
-
     val response: Future[facebook.Structures.Album] = pipeline(Get(host + "album/" + albumId))
     response
   }
 
   def deleteAlbum(albumId: Int): Future[HttpResponse] = {
     import system.dispatcher
-
     val pipeline: HttpRequest => Future[HttpResponse] = sendReceive
-
     val response: Future[HttpResponse] = pipeline(Delete(host + "album/" + albumId))
     response
-
   }
 
 
   // picture test
   def createPicture(albumId: Int, name: String, location: String): Future[HttpResponse] = {
     import system.dispatcher
-
     val pipeline: HttpRequest => Future[HttpResponse] = sendReceive
-
     val source = Source.fromFile(location, "ISO-8859-1")
     val content = source.map(_.toByte).to[ArrayBuffer]
     val response: Future[HttpResponse] = pipeline(Post(host + "picture", facebook.Structures.Picture(albumId, name, content)))
-
     response
-
   }
-
 
   def getPicture(pictureId: Int): Future[facebook.Structures.Picture] = {
     import system.dispatcher
-
     val pipeline: HttpRequest => Future[facebook.Structures.Picture] = sendReceive ~> unmarshal[facebook.Structures.Picture]
-
     val response: Future[facebook.Structures.Picture] = pipeline(Get(host + "picture/" + pictureId))
-
     response
   }
 
   def deletePicture(pictureId: Int): Future[HttpResponse] = {
     import system.dispatcher
-
     val pipeline: HttpRequest => Future[HttpResponse] = sendReceive
-
     val response: Future[HttpResponse] = pipeline(Delete(host + "picture/" + pictureId))
     response
-
   }
 
   // group test
 
   def createGroup(id: String, userId: String, name: String): Future[HttpResponse] = {
     import system.dispatcher
-
     val pipeline: HttpRequest => Future[HttpResponse] = sendReceive
-
     val response: Future[HttpResponse] = pipeline(Post(host + "group", facebook.Structures.Group(id, userId, name)))
     response
   }
 
   def getGroup(id: String): Future[facebook.Structures.Group] = {
     import system.dispatcher
-
     val pipeline: HttpRequest => Future[facebook.Structures.Group] = sendReceive ~> unmarshal[facebook.Structures.Group]
-
     val response: Future[facebook.Structures.Group] = pipeline(Get(host + "group/" + id))
     response
   }
 
   def deleteGroup(id: String): Future[HttpResponse] = {
     import system.dispatcher
-
     val pipeline: HttpRequest => Future[HttpResponse] = sendReceive
-
     val response: Future[HttpResponse] = pipeline(Delete(host + "group/" + id))
     response
+  }
 
+
+  // profile test
+
+  def createProfile(fbType: String, fbId: String): Future[HttpResponse] = {
+    import system.dispatcher
+    val pipeline: HttpRequest => Future[HttpResponse] = sendReceive
+    val response: Future[HttpResponse] = pipeline(Post(host + "profile", facebook.Structures.Profile(fbType, fbId)))
+    response
+  }
+
+  def getProfile(id: Int): Future[facebook.Structures.Profile] = {
+    // TODO Profile should be user/group/event
+    import system.dispatcher
+    val pipeline: HttpRequest => Future[facebook.Structures.Profile] = sendReceive ~> unmarshal[facebook.Structures.Profile]
+    val response: Future[facebook.Structures.Profile] = pipeline(Get(host + "profile/" + id))
+    response
+  }
+
+  def deleteProfile(id: Int): Future[HttpResponse] = {
+    import system.dispatcher
+    val pipeline: HttpRequest => Future[HttpResponse] = sendReceive
+    val response: Future[HttpResponse] = pipeline(Delete(host + "profile/" + id))
+    response
+  }
+
+
+  // event test
+
+  def createEvent(userId: String, name: String, time: String): Future[HttpResponse] = {
+    import system.dispatcher
+    val pipeline: HttpRequest => Future[HttpResponse] = sendReceive
+    val response: Future[HttpResponse] = pipeline(Post(host + "event", facebook.Structures.Event(userId, name, time)))
+    response
+  }
+
+  def getEvent(id: Int): Future[facebook.Structures.Event] = {
+    import system.dispatcher
+    val pipeline: HttpRequest => Future[facebook.Structures.Event] = sendReceive ~> unmarshal[facebook.Structures.Event]
+    val response: Future[facebook.Structures.Event] = pipeline(Get(host + "event/" + id))
+    response
+  }
+
+  def deleteEvent(id: Int): Future[HttpResponse] = {
+    import system.dispatcher
+    val pipeline: HttpRequest => Future[HttpResponse] = sendReceive
+    val response: Future[HttpResponse] = pipeline(Delete(host + "event/" + id))
+    response
   }
 
 
@@ -271,10 +292,14 @@ class Tester extends Actor with ActorLogging{
         case Failure(error) => log.warning("Create picture {} request error: {}", location, error.getMessage)
       }
 
-    case GetPicture(pictureId: Int) =>
+    case GetPicture(pictureId: Int, location: String) =>
       import system.dispatcher
       getPicture(pictureId) onComplete {
-        case Success(response) => log.info("Get picture {}, received response: {}", pictureId, response.name) // change response here
+        case Success(response) =>
+          val bos = new BufferedOutputStream(new FileOutputStream(location))
+          Stream.continually(bos.write(response.content.toArray))
+          bos.close()
+          log.info("Get picture {}, received response: {}", pictureId, response.name) // change response here
         case Failure(error) => log.warning("Get picture {} request error: {}", pictureId, error.getMessage)
       }
 
@@ -303,8 +328,51 @@ class Tester extends Actor with ActorLogging{
     case DeleteGroup(id: String) =>
       import system.dispatcher
       deleteGroup(id) onComplete {
-        case Success(response) => log.info("Delete group {}, received response: {}", id, response)
+        case Success(response) => log.info("Delete group {}, received response: {}", id, response.status)
         case Failure(error) => log.warning("Delete group {} request error: {}", id, error.getMessage)
+      }
+
+    case CreateProfile(fbType: String, fbId: String) =>
+      import system.dispatcher
+      createProfile(fbType, fbId) onComplete {
+        case Success(response) => log.info("Create profile {} {}, received response: {}", fbType, fbId, response.status)
+        case Failure(error) => log.warning("Create profile {} {} request error: {}", fbType, fbId, error.getMessage)
+      }
+
+    case GetProfile(id: Int) =>
+      import system.dispatcher
+      getProfile(id) onComplete {
+        case Success(response) => log.info("Get profile {}, received response: {}", id, response)
+        case Failure(error) => log.warning("Get profile {} request error: {}", id, error.getMessage)
+      }
+
+    case DeleteProfile(id: Int) =>
+      import system.dispatcher
+      deleteProfile(id) onComplete {
+        case Success(response) => log.info("Delete profile {}, received response: {}", id, response.status)
+        case Failure(error) => log.warning("Delete profile {} request error: {}", id, error.getMessage)
+      }
+
+
+    case CreateEvent(userId: String) =>
+      import system.dispatcher
+      createEvent(userId, randomString(Random.nextInt(5)), randomTime) onComplete {
+        case Success(response) => log.info("Create event {}, received response: {}", userId, response.status)
+        case Failure(error) => log.warning("Create event {} request error: {}", userId, error.getMessage)
+      }
+
+    case GetEvent(id: Int) =>
+      import system.dispatcher
+      getEvent(id) onComplete {
+        case Success(response) => log.info("Get event {}, received response: {}", id, response)
+        case Failure(error) => log.warning("Get event {} request error: {}", id, error.getMessage)
+      }
+
+    case DeleteEvent(id: Int) =>
+      import system.dispatcher
+      deleteEvent(id) onComplete {
+        case Success(response) => log.info("Delete event {}, received response: {}", id, response.status)
+        case Failure(error) => log.warning("Delete event {} request error: {}", id, error.getMessage)
       }
   }
 }
