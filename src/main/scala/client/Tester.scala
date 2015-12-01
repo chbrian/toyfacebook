@@ -7,8 +7,6 @@ import scala.concurrent.Future
 import scala.concurrent.duration._
 import scala.util.{Failure, Success}
 
-import client.Main._
-
 import java.io.{BufferedOutputStream, FileOutputStream, File, PrintWriter}
 
 import akka.actor.{ActorLogging, Actor}
@@ -24,7 +22,7 @@ import spray.httpx.SprayJsonSupport._
   * Created by xiaoyong on 11/30/2015.
   */
 class Tester extends Actor with ActorLogging {
-
+  import Tests._
 
   val host = "http://localhost:8080/"
 
