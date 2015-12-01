@@ -73,7 +73,7 @@ class Responder(requestContext: RequestContext) extends Actor with ActorLogging 
 
     case msg: String =>
       requestContext.complete(StatusCodes.OK, msg)
-
+      killYourself
   }
 
   private def killYourself = self ! PoisonPill

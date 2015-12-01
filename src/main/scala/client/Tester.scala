@@ -1,8 +1,7 @@
 package client
 
-import javax.imageio.ImageIO
 import scala.collection.mutable.ArrayBuffer
-import scala.io.{Source}
+import scala.io.Source
 import scala.util.Random
 import scala.concurrent.Future
 import scala.concurrent.duration._
@@ -12,26 +11,26 @@ import client.Main._
 
 import java.io.{BufferedOutputStream, FileOutputStream, File, PrintWriter}
 
-import akka.actor.{Props, ActorLogging, ActorSystem, Actor}
+import akka.actor.{ActorLogging, Actor}
 import akka.io.IO
 import akka.pattern.ask
 import akka.util.Timeout
 
-import spray.can.Http
 import spray.client.pipelining._
 import spray.http.{HttpRequest, HttpResponse}
 import spray.httpx.SprayJsonSupport._
+
 /**
   * Created by xiaoyong on 11/30/2015.
   */
-class Tester extends Actor with ActorLogging{
+class Tester extends Actor with ActorLogging {
 
 
   val host = "http://localhost:8080/"
 
   val alphabet = ('a' to 'z') ++ ('A' to 'Z') ++ ('0' to '9')
 
-  def randomString(length: Int) = {
+  def randomString(length: Int): String = {
     val sb = new StringBuilder
     for (i <- 1 to length) {
       sb.append(alphabet(Random.nextInt(62)))
@@ -39,7 +38,7 @@ class Tester extends Actor with ActorLogging{
     sb.toString
   }
 
-  def randomTime() = {
+  def randomTime(): String = {
     val sb = new StringBuilder
     sb.append(Random.nextInt(12)+"/") // month
     sb.append(Random.nextInt(30)+"/") // day
@@ -72,6 +71,20 @@ class Tester extends Actor with ActorLogging{
     val response: Future[HttpResponse] = pipeline(Delete(host + "user/" + id))
     response
 
+  }
+
+  def addFriend(id1: String, id2: String): Future[HttpResponse] = {
+    import system.dispatcher
+    val pipeline: HttpRequest => Future[HttpResponse] = sendReceive
+    val response: Future[HttpResponse] = pipeline(Put(host + "user/addFriend/" + id1 + "/" + id2))
+    response
+  }
+
+  def removeFriend(id1: String, id2: String): Future[HttpResponse] = {
+    import system.dispatcher
+    val pipeline: HttpRequest => Future[HttpResponse] = sendReceive
+    val response: Future[HttpResponse] = pipeline(Delete(host + "user/removeFriend/" + id1 + "/" + id2))
+    response
   }
 
   // post test
@@ -239,6 +252,20 @@ class Tester extends Actor with ActorLogging{
         case Failure(error) => log.warning("Delete user {} request error: {}", id, error.getMessage)
       }
 
+    case AddFriend(id1: String, id2: String) =>
+      import system.dispatcher
+      addFriend(id1, id2) onComplete {
+        case Success(response) => log.info("Add user {} with friend {}, received response: {}", id1, id2, response.status)
+        case Failure(error) => log.warning("Add user {} with friend {} request error: {}", id1, id2, error.getMessage)
+      }
+
+    case RemoveFriend(id1: String, id2: String) =>
+      import system.dispatcher
+      addFriend(id1, id2) onComplete {
+        case Success(response) => log.info("Remove user {} with friend {}, received response: {}", id1, id2, response.status)
+        case Failure(error) => log.warning("Remove user {} with friend {} request error: {}", id1, id2, error.getMessage)
+      }
+
     case CreatePost(userId: String) =>
       import system.dispatcher
       // create group with the same name with its owner
@@ -356,7 +383,7 @@ class Tester extends Actor with ActorLogging{
 
     case CreateEvent(userId: String) =>
       import system.dispatcher
-      createEvent(userId, randomString(Random.nextInt(5)), randomTime) onComplete {
+      createEvent(userId, randomString(Random.nextInt(5)), randomTime()) onComplete {
         case Success(response) => log.info("Create event {}, received response: {}", userId, response.status)
         case Failure(error) => log.warning("Create event {} request error: {}", userId, error.getMessage)
       }

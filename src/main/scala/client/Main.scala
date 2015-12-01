@@ -1,11 +1,7 @@
 package client
 
-
-import akka.actor.{ActorRef, Actor, Props, ActorSystem}
-import akka.event.Logging
+import akka.actor.{Props, ActorSystem}
 import akka.util.Timeout
-import scala.collection.mutable.ArrayBuffer
-import scala.util.{Failure, Success}
 import scala.concurrent.duration._
 
 /**
@@ -21,6 +17,10 @@ object Main extends App with Requests {
   case class GetUser(id: String)
 
   case class DeleteUser(id: String)
+
+  case class AddFriend(id1: String, id2: String)
+
+  case class RemoveFriend(id1: String, id2: String)
 
   case class CreateGroup(id: String)
 
@@ -95,7 +95,7 @@ object Main extends App with Requests {
     }
   }
 
-  //  user delete test
+  // user delete test
   def deleteUser(): Unit = {
     val testerArray = (1 to userTestScale).map(x => system.actorOf(Props[Tester]))
 
@@ -107,6 +107,39 @@ object Main extends App with Requests {
       index += 1
     }
 
+  }
+
+  // user friend test
+  def addFriend: Unit = {
+    val testerArray = (1 to userTestScale).map(x => system.actorOf(Props[Tester]))
+    var index = 0
+    for (friendTester <- testerArray) {
+      val sb1 = new StringBuilder
+      idList(index).map(x => sb1.append(x))
+
+      for (i <- 0 until friendTestScale) {
+        val sb2 = new StringBuilder
+        idList(i).map(x => sb2.append(x))
+        friendTester ! AddFriend(sb1.toString, sb2.toString)
+      }
+      index += 1
+    }
+  }
+
+  def removeFriend: Unit = {
+    val testerArray = (1 to userTestScale).map(x => system.actorOf(Props[Tester]))
+    var index = 0
+    for (friendTester <- testerArray) {
+      val sb1 = new StringBuilder
+      idList(index).map(x => sb1.append(x))
+
+      for (i <- 0 until friendTestScale) {
+        val sb2 = new StringBuilder
+        idList(i).map(x => sb2.append(x))
+        friendTester ! RemoveFriend(sb1.toString, sb2.toString)
+      }
+      index += 1
+    }
   }
 
   // group creation test
@@ -222,19 +255,19 @@ object Main extends App with Requests {
   }
 
   // picture get test
-  def getPicture: Unit ={
+  def getPicture: Unit = {
     val testerArray = (1 to pictureTestScale).map(x => system.actorOf(Props[Tester]))
     var index = 0
 
     for (tester <- testerArray) {
-      val newLocation = "src\\main\\scala\\client\\"+index+"received.jpg"
+      val newLocation = "src\\main\\scala\\client\\" + index + "received.jpg"
       tester ! GetPicture(index, newLocation)
       index += 1
     }
   }
 
   // picture delete test
-  def deletePicture: Unit ={
+  def deletePicture: Unit = {
     val testerArray = (1 to pictureTestScale).map(x => system.actorOf(Props[Tester]))
     var index = 0
     for (tester <- testerArray) {
@@ -309,47 +342,54 @@ object Main extends App with Requests {
     }
   }
 
-  val userTestScale = 1
+  val userTestScale = 2
+  val friendTestScale = 1
+  // friendTestScale should be <= userTestScale
   val groupTestScale = 1
   val postTestScale = 1
   val albumTestScale = 1
   val pictureTestScale = 1
-  val profileTestScale = 1 // profileTestScale should be smaller than user, group and event
+  val profileTestScale = 1
+  // profileTestScale should be smaller than user, group and event
   val eventTestScale = 1
 
 
   // compose test case
   createUser
   Thread sleep 1000
+  addFriend
+  Thread sleep 1000
+  // removeFriend
+  // Thread sleep 1000
   getUser
   Thread sleep 1000
-  //  deleteUser
-  //  Thread sleep 1000
+  // deleteUser
+  // Thread sleep 1000
   createGroup
   Thread sleep 1000
   getGroup
   Thread sleep 1000
-//  deleteGroup
-//  Thread sleep 1000
-//  createPost
-//  Thread sleep 1000
-//  getPost
-//  Thread sleep 1000
-//  deletePost
-//  Thread sleep 1000
+  //  deleteGroup
+  //  Thread sleep 1000
+  //  createPost
+  //  Thread sleep 1000
+  //  getPost
+  //  Thread sleep 1000
+  //  deletePost
+  //  Thread sleep 1000
   createAlbum
   Thread sleep 1000
   getAlbum
   Thread sleep 1000
-//  deleteAlbum
-//  Thread sleep 1000
+  //  deleteAlbum
+  //  Thread sleep 1000
 
-//  createPicture
-//  Thread sleep 1000
-//  getPicture
-//  Thread sleep 1000
-//  deletePicture
-//  Thread sleep 1000
+  //  createPicture
+  //  Thread sleep 1000
+  //  getPicture
+  //  Thread sleep 1000
+  //  deletePicture
+  //  Thread sleep 1000
 
   createEvent
   Thread sleep 1000
@@ -360,9 +400,10 @@ object Main extends App with Requests {
 
   createProfile
   Thread sleep 1000
-//  getProfile
-//  Thread sleep 1000
+  //  getProfile
+  //  Thread sleep 1000
   deleteProfile
   Thread sleep 1000
 
+  system.shutdown()
 }

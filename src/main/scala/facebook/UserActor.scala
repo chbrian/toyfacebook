@@ -1,9 +1,6 @@
 package facebook
 
-import akka.actor.{PoisonPill, Actor}
 import Structures._
-import spray.http.StatusCodes
-import spray.routing.RequestContext
 
 /**
   * Created by xiaoyong on 11/25/2015.

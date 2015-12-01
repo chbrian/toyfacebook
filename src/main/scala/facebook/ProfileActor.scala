@@ -1,7 +1,5 @@
 package facebook
 
-import scala.concurrent.Await
-
 
 class ProfileActor extends BasicActor {
 
