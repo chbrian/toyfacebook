@@ -181,7 +181,7 @@ class UserClient extends Actor with ActorLogging {
     val pipeline: HttpRequest => Future[HttpResponse] = sendReceive
     val response: Future[HttpResponse] = pipeline(Get(host + "friendKey/" + userId))
     response onComplete {
-      case Success(response) => return Deserializer[response, Map[String, Array[Byte]]]
+      case Success(response) => response
       case Failure(error) => log.error("Can't get friends' public key ", userId, error.getMessage)
         None
     }
