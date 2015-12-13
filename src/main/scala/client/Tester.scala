@@ -22,6 +22,7 @@ import spray.httpx.SprayJsonSupport._
   * Created by xiaoyong on 11/30/2015.
   */
 class Tester extends Actor with ActorLogging {
+
   import Tests._
 
   val host = "http://localhost:8080/"
@@ -38,9 +39,9 @@ class Tester extends Actor with ActorLogging {
 
   def randomTime(): String = {
     val sb = new StringBuilder
-    sb.append(Random.nextInt(12)+"/") // month
-    sb.append(Random.nextInt(30)+"/") // day
-    sb.append(Random.nextInt(100)+" ") // year
+    sb.append(Random.nextInt(12) + "/") // month
+    sb.append(Random.nextInt(30) + "/") // day
+    sb.append(Random.nextInt(100) + " ") // year
     sb.toString()
   }
 

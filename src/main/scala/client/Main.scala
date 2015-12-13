@@ -24,8 +24,8 @@ object Main extends App {
   implicit val executionContext: ExecutionContext = ExecutionContext.global
 
 
-  val userTestScale = 200
-  val friendTestScale = 10 // friendTestScale should be <= userTestScale
+  val userTestScale = 10
+  val friendTestScale = 10 // friendTestScale should <= userTestScale
   val groupTestScale = 100
   val postTestScale = 100
   val albumTestScale = 100
@@ -40,39 +40,39 @@ object Main extends App {
 
   system.scheduler.scheduleOnce(3.seconds)(Tests.getUser)
 
-  system.scheduler.scheduleOnce(4.seconds)(Tests.removeFriend)
-
-  system.scheduler.scheduleOnce(5.seconds)(Tests.createGroup)
-
-  system.scheduler.scheduleOnce(6.seconds)(Tests.getGroup)
-
-  system.scheduler.scheduleOnce(7.seconds)(Tests.createPost)
-
-  system.scheduler.scheduleOnce(8.seconds)(Tests.getPost)
-
-  system.scheduler.scheduleOnce(9.seconds)(Tests.deletePost)
-
-  system.scheduler.scheduleOnce(10.seconds)(Tests.createAlbum)
-
-  system.scheduler.scheduleOnce(11.seconds)(Tests.getAlbum)
-
-  system.scheduler.scheduleOnce(12.seconds)(Tests.deleteAlbum)
-
-  // system.scheduler.scheduleOnce(13.seconds)(Tests.createPicture)
-
-  // system.scheduler.scheduleOnce(14.seconds)(Tests.getPicture)
-
-  system.scheduler.scheduleOnce(15.seconds)(Tests.createEvent)
-
-  system.scheduler.scheduleOnce(16.seconds)(Tests.getEvent)
-
-  system.scheduler.scheduleOnce(17.seconds)(Tests.deleteEvent)
-
-  system.scheduler.scheduleOnce(18.seconds)(Tests.createProfile)
-
-  system.scheduler.scheduleOnce(19.seconds)(Tests.deleteProfile)
-
-  system.scheduler.scheduleOnce(20.seconds)(Tests.deleteUser)
-
-  system.scheduler.scheduleOnce(60.seconds)(system.shutdown())
+//  system.scheduler.scheduleOnce(4.seconds)(Tests.removeFriend)
+//
+//  system.scheduler.scheduleOnce(5.seconds)(Tests.createGroup)
+//
+//  system.scheduler.scheduleOnce(6.seconds)(Tests.getGroup)
+//
+//  system.scheduler.scheduleOnce(7.seconds)(Tests.createPost)
+//
+//  system.scheduler.scheduleOnce(8.seconds)(Tests.getPost)
+//
+//  system.scheduler.scheduleOnce(9.seconds)(Tests.deletePost)
+//
+//  system.scheduler.scheduleOnce(10.seconds)(Tests.createAlbum)
+//
+//  system.scheduler.scheduleOnce(11.seconds)(Tests.getAlbum)
+//
+//  system.scheduler.scheduleOnce(12.seconds)(Tests.deleteAlbum)
+//
+//  // system.scheduler.scheduleOnce(13.seconds)(Tests.createPicture)
+//
+//  // system.scheduler.scheduleOnce(14.seconds)(Tests.getPicture)
+//
+//  system.scheduler.scheduleOnce(15.seconds)(Tests.createEvent)
+//
+//  system.scheduler.scheduleOnce(16.seconds)(Tests.getEvent)
+//
+//  system.scheduler.scheduleOnce(17.seconds)(Tests.deleteEvent)
+//
+//  system.scheduler.scheduleOnce(18.seconds)(Tests.createProfile)
+//
+//  system.scheduler.scheduleOnce(19.seconds)(Tests.deleteProfile)
+//
+//  system.scheduler.scheduleOnce(20.seconds)(Tests.deleteUser)
+//
+//  system.scheduler.scheduleOnce(60.seconds)(system.shutdown())
 }

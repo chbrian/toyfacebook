@@ -1,6 +1,7 @@
 package facebook
 
 import akka.actor.{Actor, ActorLogging, PoisonPill}
+import facebook.Structures.NestedJsonProtocol._
 import spray.http.StatusCodes
 import spray.routing.RequestContext
 import spray.httpx.SprayJsonSupport._
@@ -69,6 +70,10 @@ class Responder(requestContext: RequestContext) extends Actor with ActorLogging 
 
     case EventOpFailed =>
       requestContext.complete(StatusCodes.NotFound)
+      killYourself
+
+    case keyMap: Map[String, Array[Byte]] =>
+      requestContext.complete(StatusCodes.OK, keyMap)
       killYourself
 
     case msg: String =>

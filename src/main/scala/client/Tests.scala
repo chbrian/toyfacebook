@@ -128,9 +128,9 @@ object Tests {
         friendTester ! RemoveFriend(sb1.toString, sb2.toString)
       }
       index += 1
-    }
   }
 
+}
   // group creation test
   def createGroup: Unit = {
     val testerArray = (1 to groupTestScale).map(x => system.actorOf(Props[Tester]))
