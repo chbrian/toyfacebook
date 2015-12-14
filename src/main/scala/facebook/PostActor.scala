@@ -16,6 +16,8 @@ class PostActor extends BasicActor {
 
   def createPost(post: Post): Boolean = {
     val future = userActor ? AddPost(post.userId, postCount)
+    println(post)
+    println(post.userList.head)
     Await.result(future, timeout.duration).asInstanceOf[Boolean] match {
       case true =>
         posts += (postCount -> post)

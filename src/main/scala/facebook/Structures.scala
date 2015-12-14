@@ -35,7 +35,7 @@ object Structures {
   case object UserOpFailed
 
   // FB REST post requests
-  case class Post(userId: String, encryptedContent: Array[Byte], userList: Array[String], keyList: Array[Array[Byte]])
+  case class Post(userId: String, encryptedContent: Array[Byte], userList: ArrayBuffer[String], keyList: ArrayBuffer[Array[Byte]])
 
   case class CreatePost(post: Post)
 
@@ -181,13 +181,12 @@ object Structures {
       )
 
       def read(value: JsValue) = {
-        value.asJsObject.getFields("id", "name", "password", "friends", "posts", "albums", "groups", "events") match {
+        value.asJsObject.getFields("id", "name", "publicKey", "friends", "posts", "albums", "groups", "events") match {
           case Seq(JsString(id), JsString(name), JsArray(publicKey)) =>
-            println(publicKey)
             new User(id, name, publicKey.map(_.toString.toByte).toArray)
           case Seq(JsString(id), JsString(name), JsArray(publicKey), JsArray(friends), JsArray(posts), JsArray(albums),
           JsArray(groups), JsArray(events)) =>
-            new User(id, name, publicKey.map(_.convertTo[Byte]).toArray, friends.map(x => x.toString).to[ArrayBuffer],
+            new User(id, name, publicKey.map(_.toString.toByte).toArray, friends.map(x => x.toString).to[ArrayBuffer],
               posts.map(x => x.toString.toInt).to[ArrayBuffer], albums.map(x => x.convertTo[Int]).to[ArrayBuffer],
               groups.map(x => x.toString).to[ArrayBuffer], events.map(x => x.convertTo[Int]).to[ArrayBuffer])
           case _ => throw new DeserializationException("User expected")
@@ -204,21 +203,23 @@ object Structures {
       def write(post: Post) = JsObject(
         Map(
           "userId" -> JsString(post.userId),
-          "encryptedContent" -> JsArray(post.encryptedContent.toJson),
+          "encryptedContent" -> JsArray(post.encryptedContent.map(_.toJson).toVector),
           "userList" -> JsArray(post.userList.map(_.toJson).toVector),
-          "keyList" -> JsArray(post.keyList.map(_.toJson).toVector)
+          "keyList" -> JsArray(post.keyList.map(x => JsArray(x.map(_.toJson).toVector)).toVector)
         )
 
       )
 
-      def read(value: JsValue) = {
-        value.asJsObject.getFields("userId", "encryptedContent", "userList", "keyList") match {
-          case Seq(JsString(userId), JsArray(encryptedContent), JsArray(userList), JsArray(keyList)) =>
-            new Post(userId, encryptedContent.map(_.convertTo[Byte]).toArray,
-              userList.map(_.toString).toArray, keyList.map(_.convertTo[Array[Byte]]).toArray)
-          case _ => throw new DeserializationException("Post expected")
+//      def read(value: JsValue): Post = ???
+
+        def read(value: JsValue) = {
+          value.asJsObject.getFields("userId", "encryptedContent", "userList", "keyList") match {
+            case Seq(JsString(userId), JsArray(encryptedContent), JsArray(userList), JsArray(keyList)) =>
+              new Post(userId, encryptedContent.map(_.toString.toByte).toArray,
+                userList.map(_.convertTo[String]).to[ArrayBuffer], keyList.map(_.convertTo[Array[Byte]]).to[ArrayBuffer])
+            case _ => throw new DeserializationException("Post expected")
+          }
         }
-      }
     }
 
   }
@@ -338,29 +339,22 @@ object Structures {
 
   object NestedJsonProtocol extends DefaultJsonProtocol {
 
-    implicit object AnyJsonFormat extends JsonFormat[Any] {
-      def write(x: Any) = x match {
-        case n: Int => JsNumber(n)
-        case s: String => JsString(s)
-        case x: Seq[_] => seqFormat[Any].write(x)
-        case m: Map[String, _] => mapFormat[String, Any].write(m)
-        case b: Boolean if b == true => JsTrue
-        case b: Boolean if b == false => JsFalse
-        case x => serializationError("Do not understand object of type " + x.getClass.getName)
+    type StringToAny = Map[String, Any]
+
+    implicit object MapJsonFormat  extends JsonFormat[Map[String, Any] ] {
+      def write(m: Map[String, Any]) = {
+      JsObject(m.mapValues {
+      case v: String => JsString(v)
+      case v: Int => JsNumber(v)
+      case v: StringToAny => write(v)
+      case v: Any => JsString(v.toString)
+      })
       }
 
-      def read(value: JsValue) = value match {
-        case JsNumber(n) => n.intValue()
-        case JsString(s) => s
-        case a: JsArray => listFormat[Any].read(value)
-        case o: JsObject => mapFormat[String, Any].read(value)
-        case JsTrue => true
-        case JsFalse => false
-        case x => deserializationError("Do not understand how to deserialize " + x)
-      }
+      def read(value: JsValue) = ???
     }
-
   }
+
 
 
 }

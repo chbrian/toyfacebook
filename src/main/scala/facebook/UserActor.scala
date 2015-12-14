@@ -14,7 +14,6 @@ class UserActor extends BasicActor with ActorLogging {
     if (users.contains(user.id))
       return false
     users += (user.id -> new User(user.id, user.name, user.publicKey))
-    log.info(user.name)
     true
   }
 

@@ -91,18 +91,23 @@ object Main extends App {
   val user2 = system.actorOf(Props[UserClient], name = user2Name)
   user2 ! CreateUser(user2Name)
 
-  Thread.sleep(5000)
+
+  user1 ! GetUser(user1Name)
+  Thread.sleep(2000)
   user1 ! AddFriend(user2Name)
   user2 ! AddFriend(user1Name)
 
+  Thread.sleep(2000)
+  user1 ! GetUser(user1Name)
+  user2 ! GetUser(user2Name)
+  val content1 = "hello world"
+  val content2 = "best regards"
+  user1 ! CreatePost(content1)
+  user2 ! CreatePost(content2)
+
   Thread.sleep(1000)
-//  val content1 = "hello world"
-  //  val content2 = "best regards"
-  //  user1 ! CreatePost(content1)
-  //  user2 ! CreatePost(content2)
-  //
-  //  user1 ! GetPost(1)
-  //  user2 ! GetPost(1)
+  user1 ! GetPost(1)
+  user2 ! GetPost(1)
   // compose test cases
 
   //  system.scheduler.scheduleOnce(0.seconds)(Tests.createUser)

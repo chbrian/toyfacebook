@@ -151,6 +151,7 @@ trait RestApi extends HttpService with ActorLogging {
           post {
             entity(as[Post]) { newPost => requestContext =>
               log.info("Get post creation request: {}", newPost)
+              println("my head: "+newPost.userList.head)
               val responder = createResponder(requestContext)
               val future = postActor ? CreatePost(newPost)
               Await.result(future, timeout.duration).asInstanceOf[Boolean] match {
