@@ -6,7 +6,6 @@ import javax.crypto.{Cipher, KeyGenerator}
 
 import akka.actor.{ActorLogging, Actor}
 import akka.util.Timeout
-import spray.httpx.unmarshalling.Deserializer
 
 import scala.concurrent.Future
 import scala.concurrent.duration._
@@ -17,6 +16,7 @@ import spray.client.pipelining._
 import spray.http.{HttpRequest, HttpResponse}
 import spray.httpx.SprayJsonSupport._
 
+import client.Main._
 
 /**
   * Created by xiaoyong on 12/12/2015.
@@ -25,7 +25,6 @@ import spray.httpx.SprayJsonSupport._
 class UserClient extends Actor with ActorLogging {
 
   val host = "http://localhost:8080/"
-  val userId = "abc"
 
   val alphabet = ('a' to 'z') ++ ('A' to 'Z') ++ ('0' to '9')
 
@@ -47,6 +46,9 @@ class UserClient extends Actor with ActorLogging {
 
   implicit val timeout: Timeout = 60.seconds
 
+
+  var userId = new String()
+
   // User Key
   val system = context.system
   val random = SecureRandom.getInstance("SHA1PRNG", "SUN")
@@ -57,10 +59,11 @@ class UserClient extends Actor with ActorLogging {
   val publicKey = pairKey.getPublic()
 
 
-  def createUser(id: String, name: String, password: String): Future[HttpResponse] = {
+  def createUser(id: String, name: String): Future[HttpResponse] = {
     import system.dispatcher
     val pipeline: HttpRequest => Future[HttpResponse] = sendReceive
-    val response: Future[HttpResponse] = pipeline(Post(host + "user", facebook.Structures.User(id, name, password)))
+    val response: Future[HttpResponse] = pipeline(Post(host + "user",
+      facebook.Structures.User(id, name, publicKey.getEncoded)))
     response
   }
 
@@ -99,12 +102,16 @@ class UserClient extends Actor with ActorLogging {
     val pipeline: HttpRequest => Future[HttpResponse] = sendReceive
     val symKey = KeyGenerator.getInstance("AES").generateKey()
     val encryptedContent = encryptMsg(content, privateKey, publicKey, symKey)
-    val friendKeyMap = getFriendPublicKey()
-    val publicKeyMap = mutable.Map[String, Array[Byte]](userId -> publicKey.getEncoded) ++ friendKeyMap
+    val publicKeyMap = mutable.Map[String, Array[Byte]](userId -> publicKey.getEncoded)
+    getFriendPublicKey() match {
+      case Some(friendMap: mutable.Map[String, Array[Byte]]) =>
+        publicKeyMap ++= friendMap
+      case None =>
+    }
     // TODO
     val userKeyMap = encryptKey(symKey, publicKeyMap)
     val response: Future[HttpResponse] = pipeline(Post(host + "post",
-      facebook.Structures.Post(userId, encryptedContent, userKeyMap)))
+      facebook.Structures.Post(userId, encryptedContent, userKeyMap.keys.toArray, userKeyMap.values.toArray)))
     response
   }
 
@@ -113,6 +120,20 @@ class UserClient extends Actor with ActorLogging {
     val pipeline: HttpRequest => Future[facebook.Structures.Post] = sendReceive ~> unmarshal[facebook.Structures.Post]
     val response: Future[facebook.Structures.Post] = pipeline(Get(host + "post/" + postId))
     response
+  }
+
+  def getPostContent(post: facebook.Structures.Post): Option[String] = {
+    val index = post.userList.indexOf(userId)
+    if (index >= 0) {
+      val encryptedKey = post.keyList(index)
+      val symKey = decryptKey(encryptedKey, privateKey)
+      val content = decryptMsg(post.encryptedContent, symKey)
+      content
+    }
+    else {
+      None
+    }
+
   }
 
   def deletePost(postId: Int): Future[HttpResponse] = {
@@ -131,7 +152,6 @@ class UserClient extends Actor with ActorLogging {
     dsaPrivate.initSign(myPrivateKey)
     dsaPrivate.update(digest)
     val signature = dsaPrivate.sign
-    println("signature " + signature)
     val cipher1 = Cipher.getInstance("AES/ECB/PKCS5Padding")
     cipher1.init(Cipher.ENCRYPT_MODE, symKey)
     cipher1.doFinal(msg.getBytes ++ signature ++ myPublicKey.getEncoded)
@@ -140,7 +160,7 @@ class UserClient extends Actor with ActorLogging {
   def encryptKey(symKey: Key, publicKeyMap: mutable.Map[String, Array[Byte]]): mutable.Map[String, Array[Byte]] = {
     val symKeyMap = mutable.Map[String, Array[Byte]]()
     val cipher = Cipher.getInstance("RSA/ECB/PKCS1Padding")
-    for (user <- publicKey) {
+    for (user <- publicKeyMap.keys) {
       val publicKey = KeyFactory.getInstance("RSA").generatePublic(new X509EncodedKeySpec(publicKeyMap(user)))
       cipher.init(Cipher.WRAP_MODE, publicKey)
       symKeyMap(user) = cipher.wrap(symKey)
@@ -148,21 +168,22 @@ class UserClient extends Actor with ActorLogging {
     symKeyMap
   }
 
-  def decrypt(encryptedMsg: Array[Byte], myPrivateKey: PrivateKey, myPublicKey: PublicKey): Option[String] = {
-    val tmp1 = encryptedMsg.take(encryptedMsg.length - 128)
-    val tmp2 = encryptedMsg.takeRight(128)
+  def decryptKey(encryptKey: Array[Byte], myPrivateKey: PrivateKey): Key = {
+    val cipher = Cipher.getInstance("RSA/ECB/PKCS1Padding")
+    cipher.init(Cipher.UNWRAP_MODE, myPrivateKey)
+    val symK = cipher.unwrap(encryptKey, "AES", Cipher.SECRET_KEY)
+    symK
+  }
 
-    val cipher1 = Cipher.getInstance("RSA/ECB/PKCS1Padding")
-    cipher1.init(Cipher.UNWRAP_MODE, myPrivateKey)
-    val symK = cipher1.unwrap(tmp2, "AES", Cipher.SECRET_KEY)
+  def decryptMsg(encryptedMsg: Array[Byte], symKey: Key): Option[String] = {
 
-    val cipher2 = Cipher.getInstance("AES/ECB/PKCS5Padding")
-    cipher2.init(Cipher.DECRYPT_MODE, symK)
-    val tmp3 = cipher2.doFinal(tmp1)
-    val tmp4 = tmp3.take(tmp3.length - 162)
-    val publicKey = KeyFactory.getInstance("RSA").generatePublic(new X509EncodedKeySpec(tmp3.takeRight(162)))
+    val cipher = Cipher.getInstance("AES/ECB/PKCS5Padding")
+    cipher.init(Cipher.DECRYPT_MODE, symKey)
+    val tmp = cipher.doFinal(encryptedMsg)
+    val tmp2 = tmp.take(tmp.length - 162)
+    val publicKey = KeyFactory.getInstance("RSA").generatePublic(new X509EncodedKeySpec(tmp.takeRight(162)))
 
-    val msg = tmp4.take(tmp4.length - 128)
+    val msg = tmp2.take(tmp2.length - 128)
     val md = MessageDigest.getInstance("SHA-256")
     md.update(msg)
     val digest = md.digest()
@@ -170,7 +191,7 @@ class UserClient extends Actor with ActorLogging {
     val dsaPublic = Signature.getInstance("SHA256withRSA")
     dsaPublic.initVerify(publicKey)
     dsaPublic.update(digest)
-    if (dsaPublic.verify(tmp4.takeRight(128)))
+    if (dsaPublic.verify(tmp2.takeRight(128)))
       Some(new String(msg, "UTF-8"))
     else
       None
@@ -181,13 +202,47 @@ class UserClient extends Actor with ActorLogging {
     val pipeline: HttpRequest => Future[HttpResponse] = sendReceive
     val response: Future[HttpResponse] = pipeline(Get(host + "friendKey/" + userId))
     response onComplete {
-      case Success(response) => response
-      case Failure(error) => log.error("Can't get friends' public key ", userId, error.getMessage)
-        None
+      case Success(response) => return Some(response.entity.asInstanceOf[Map[String, Array[Byte]]])
+      case Failure(error) => return None
     }
+    None
   }
 
   def receive = {
+    case CreateUser(userId: String) =>
+      import system.dispatcher
+      this.userId = userId
+      createUser(userId, randomString(7)) onComplete {
+        case Success(response) => log.info("Create user {}, received response: {}", userId, response.status)
+        case Failure(error) => log.warning("Create user {} request error: {}", userId, error.getMessage)
+      }
+    case GetUser(id: String) =>
+      import system.dispatcher
+      getUser(id) onComplete {
+        case Success(response) => log.info("Get user {}, received response: {}", id, response)
+        case Failure(error) => log.warning("Get user {} request error: {}", id, error.getMessage)
+      }
+    case AddFriend(id: String) =>
+      import system.dispatcher
+      addFriend(userId, id) onComplete {
+        case Success(response) => log.info("Add user {} with friend {}, received response: {}", userId, id, response.status)
+        case Failure(error) => log.warning("Add user {} with friend {} request error: {}", userId, id, error.getMessage)
+      }
+    case CreatePost(userId: String) =>
+      import system.dispatcher
+      // create group with the same name with its owner
+      createPost(userId, randomString(Random.nextInt(10))) onComplete {
+        case Success(response) => log.info("Create post {}, received response: {}", userId, response.status)
+        case Failure(error) => log.warning("Create post {} request error: {}", userId, error.getMessage)
+      }
+    case GetPost(postId: Int) =>
+      import system.dispatcher
+      // create group with the same name with its owner
+      getPost(postId) onComplete {
+        case Success(response) => log.info("Get post {}, received response: {}",
+          postId, getPostContent(response.asInstanceOf[facebook.Structures.Post]))
+        case Failure(error) => log.warning("Get post {} request error: {}", postId, error.getMessage)
+      }
 
   }
 

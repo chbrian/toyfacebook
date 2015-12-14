@@ -2,6 +2,7 @@ package facebook
 
 import spray.httpx.SprayJsonSupport
 import spray.json._
+import scala.collection.mutable
 import scala.collection.mutable.ArrayBuffer
 
 /**
@@ -15,7 +16,7 @@ object Structures {
 
   // FB REST user requests
 
-  case class User(id: String, name: String, password: String, friends: ArrayBuffer[String] = new ArrayBuffer[String](),
+  case class User(id: String, name: String, publicKey: Array[Byte], friends: ArrayBuffer[String] = new ArrayBuffer[String](),
                   posts: ArrayBuffer[Int] = new ArrayBuffer[Int](), albums: ArrayBuffer[Int] = new ArrayBuffer[Int](),
                   groups: ArrayBuffer[String] = new ArrayBuffer[String](),
                   events: ArrayBuffer[Int] = new ArrayBuffer[Int]())
@@ -34,7 +35,7 @@ object Structures {
   case object UserOpFailed
 
   // FB REST post requests
-  case class Post(userId: String, content: String)
+  case class Post(userId: String, encryptedContent: Array[Byte], userList: Array[String], keyList: Array[Array[Byte]])
 
   case class CreatePost(post: Post)
 
@@ -137,6 +138,31 @@ object Structures {
 
   case object KeyOpFailed
 
+  //  case class UserKeyMap(userList: Array[String], keyList: Array[Array[Byte]])
+  //
+  //
+  //  // Json for UserKeyMap
+  //  object UserKeyMap extends DefaultJsonProtocol {
+  //
+  //    implicit object UserKeyMapsonFormat extends RootJsonFormat[UserKeyMap] {
+  //      def write(userKeyMap: UserKeyMap) = JsObject(
+  //        Map(
+  //          "userList" -> JsArray(userKeyMap.userList.map(_.toJson).toVector),
+  //          "keyList" -> JsArray(userKeyMap.keyList.map(_.toJson).toVector)
+  //        )
+  //
+  //      )
+  //
+  //      def read(value: JsValue) = {
+  //        value.asJsObject.getFields("userList", "keyList") match {
+  //          case Seq(JsArray(userList), JsArray(keyList)) =>
+  //            new UserKeyMap(userList.map(_.toString).toArray, keyList.map(_.convertTo[Array[Byte]]).toArray)
+  //        }
+  //      }
+  //    }
+  //
+  //  }
+
   // Json for User
   object User extends DefaultJsonProtocol {
 
@@ -145,7 +171,7 @@ object Structures {
         Map(
           "id" -> JsString(user.id),
           "name" -> JsString(user.name),
-          "password" -> JsString(user.password),
+          "publicKey" -> JsArray(user.publicKey.map(_.toJson).toVector),
           "friends" -> JsArray(user.friends.map(_.toJson).toVector),
           "posts" -> JsArray(user.posts.map(_.toJson).toVector),
           "albums" -> JsArray(user.albums.map(_.toJson).toVector),
@@ -156,11 +182,12 @@ object Structures {
 
       def read(value: JsValue) = {
         value.asJsObject.getFields("id", "name", "password", "friends", "posts", "albums", "groups", "events") match {
-          case Seq(JsString(id), JsString(name), JsString(password)) =>
-            new User(id, name, password)
-          case Seq(JsString(id), JsString(name), JsString(password), JsArray(friends), JsArray(posts), JsArray(albums),
+          case Seq(JsString(id), JsString(name), JsArray(publicKey)) =>
+            println(publicKey)
+            new User(id, name, publicKey.map(_.toString.toByte).toArray)
+          case Seq(JsString(id), JsString(name), JsArray(publicKey), JsArray(friends), JsArray(posts), JsArray(albums),
           JsArray(groups), JsArray(events)) =>
-            new User(id, name, password, friends.map(x => x.toString).to[ArrayBuffer],
+            new User(id, name, publicKey.map(_.convertTo[Byte]).toArray, friends.map(x => x.toString).to[ArrayBuffer],
               posts.map(x => x.toString.toInt).to[ArrayBuffer], albums.map(x => x.convertTo[Int]).to[ArrayBuffer],
               groups.map(x => x.toString).to[ArrayBuffer], events.map(x => x.convertTo[Int]).to[ArrayBuffer])
           case _ => throw new DeserializationException("User expected")
@@ -172,7 +199,28 @@ object Structures {
 
   // Json for Post
   object Post extends DefaultJsonProtocol {
-    implicit val format = jsonFormat2(Post.apply)
+
+    implicit object PostJsonFormat extends RootJsonFormat[Post] {
+      def write(post: Post) = JsObject(
+        Map(
+          "userId" -> JsString(post.userId),
+          "encryptedContent" -> JsArray(post.encryptedContent.toJson),
+          "userList" -> JsArray(post.userList.map(_.toJson).toVector),
+          "keyList" -> JsArray(post.keyList.map(_.toJson).toVector)
+        )
+
+      )
+
+      def read(value: JsValue) = {
+        value.asJsObject.getFields("userId", "encryptedContent", "userList", "keyList") match {
+          case Seq(JsString(userId), JsArray(encryptedContent), JsArray(userList), JsArray(keyList)) =>
+            new Post(userId, encryptedContent.map(_.convertTo[Byte]).toArray,
+              userList.map(_.toString).toArray, keyList.map(_.convertTo[Array[Byte]]).toArray)
+          case _ => throw new DeserializationException("Post expected")
+        }
+      }
+    }
+
   }
 
   // Json for Profile
@@ -222,7 +270,7 @@ object Structures {
           case Seq(JsNumber(albumId), JsString(name)) =>
             new Picture(albumId.toInt, name)
           case Seq(JsNumber(albumId), JsString(name), JsArray(content)) =>
-            new Picture(albumId.toInt, name, content.map(x => x.convertTo[Byte]).to[ArrayBuffer])
+            new Picture(albumId.toInt, name, content.map(_.convertTo[Byte]).to[ArrayBuffer])
           case _ => throw new DeserializationException("Picture expected")
         }
       }

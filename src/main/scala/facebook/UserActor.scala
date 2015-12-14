@@ -1,18 +1,20 @@
 package facebook
 
 import Structures._
+import akka.actor.ActorLogging
 
 /**
   * Created by xiaoyong on 11/25/2015.
   */
-class UserActor extends BasicActor {
+class UserActor extends BasicActor with ActorLogging {
 
   private val users = scala.collection.mutable.Map[String, User]()
 
   def createUser(user: User): Boolean = {
     if (users.contains(user.id))
       return false
-    users += (user.id -> new User(user.id, user.name, user.password))
+    users += (user.id -> new User(user.id, user.name, user.publicKey))
+    log.info(user.name)
     true
   }
 
@@ -126,6 +128,18 @@ class UserActor extends BasicActor {
     true
   }
 
+  def getFriendKey(userId: String): Option[Map[String, Array[Byte]]] = {
+    if (!users.contains(userId))
+      return None
+    val friends = users(userId).friends
+    if (friends.isEmpty)
+      return None
+    val friendKeyMap = scala.collection.mutable.Map[String, Array[Byte]]()
+    for (friend <- friends)
+      friendKeyMap(friend) = users(friend).publicKey
+    Some(Map(friendKeyMap.toSeq: _*))
+  }
+
   def receive = {
     case CreateUser(user: User) =>
       sender ! createUser(user)
@@ -165,6 +179,9 @@ class UserActor extends BasicActor {
 
     case CancelEvent(userId: String, eventId: Int) =>
       sender ! cancelEvent(userId, eventId)
+
+    case GetFriendKey(userId: String) =>
+      sender ! getFriendKey(userId)
 
   }
 }

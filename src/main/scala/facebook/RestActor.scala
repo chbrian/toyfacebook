@@ -428,7 +428,7 @@ trait RestApi extends HttpService with ActorLogging {
           get { requestContext =>
             val responder = createResponder(requestContext)
             val future = userActor ? GetFriendKey(userId)
-            Await.result(future, timeout.duration).asInstanceOf[Option[scala.collection.mutable.Map[String,
+            Await.result(future, timeout.duration).asInstanceOf[Option[Map[String,
               Array[Byte]]]] match {
               case Some(keyMap: Map[String, Array[Byte]]) => responder ! keyMap
               case None => responder ! KeyOpFailed
